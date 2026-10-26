@@ -43,3 +43,5 @@ git push origin main --tags
 ```
 
 See [AGENTS.md](AGENTS.md) for AI agent guidelines.
+
+Möge aus jedem kleinen Anfang etwas Großes wachsen.
