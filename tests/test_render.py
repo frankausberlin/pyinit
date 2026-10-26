@@ -66,6 +66,30 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
         assert "run" in recipe_names(justfile.content)
 
 
+@pytest.mark.parametrize("profile_id", ["app", "app-cli"])
+def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Path) -> None:
+    """A dotted project name stays a single command key in TOML."""
+    catalog = load_catalog()
+    profile = catalog.profile(profile_id)
+    context = context_for(profile, tmp_path / "my.project")
+    files = render_files(resolve(profile, catalog), context)
+    pyproject = next(item for item in files if item.target == "pyproject.toml")
+    scripts = tomllib.loads(pyproject.content)["project"]["scripts"]
+    assert scripts == {"my.project": "my_project.main:main"}
+
+
+@pytest.mark.parametrize("profile_id", ["app", "app-cli"])
+def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: Path) -> None:
+    """Names without a dot produce the same command key as before."""
+    catalog = load_catalog()
+    profile = catalog.profile(profile_id)
+    context = context_for(profile, tmp_path / "demo")
+    files = render_files(resolve(profile, catalog), context)
+    pyproject = next(item for item in files if item.target == "pyproject.toml")
+    scripts = tomllib.loads(pyproject.content)["project"]["scripts"]
+    assert scripts == {"demo": "demo.main:main"}
+
+
 def test_profile_without_entrypoint_omits_scripts_and_run(tmp_path: Path) -> None:
     """An app profile without an entrypoint artifact gets no command or run recipe."""
     data = _catalog_with()

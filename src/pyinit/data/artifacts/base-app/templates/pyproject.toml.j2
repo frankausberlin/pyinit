@@ -12,7 +12,7 @@ requires-python = ">={{ python_version }}"
 {% endfor %}]{% else %}dependencies = []{% endif %}
 
 {% if has_entrypoint %}[project.scripts]
-{{ project_name }} = "{{ package_name }}.main:main"
+"{{ project_name }}" = "{{ package_name }}.main:main"
 
 {% endif %}[build-system]
 requires = ["uv_build>=0.10.9,<0.11.0"]
