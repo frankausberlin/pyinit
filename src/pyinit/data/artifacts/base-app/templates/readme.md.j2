@@ -28,7 +28,17 @@ just test-agent  # provider suite manually (hint + exit 0 until tests exist)
 gate: run it locally with `just test-e2e`; CI runs it automatically once test
 files exist. Agent tests are manual-only and never run in CI.
 
-{% if has_docs %}## Documentation
+{% if "mcp" in artifacts %}## MCP Server
+
+```bash
+just run         # start the MCP server over stdio
+just mcp-dev     # open the pinned MCP Inspector on loopback (requires Node.js and npx)
+```
+
+`just mcp-dev` is a development helper; `just check` does not require Node.js.
+The smoke tests call the server through the in-memory `Client` from the SDK.
+
+{% endif %}{% if has_docs %}## Documentation
 
 ```bash
 {% if mode == "lib" %}just docs         # build the documentation

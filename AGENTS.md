@@ -90,6 +90,19 @@ Nummer wird nicht neu vergeben.
 - **Kontext**: Ein grüner Generator-Test soll nicht durch fehlendes Netzwerk
   oder einen anderen Interpreter im Container verfälscht werden.
 
+### AP-2: MCP-Projekt nicht `mcp` nennen
+
+- **Situation**: Das Profil `mcp` hängt von der PyPI-Distribution `mcp` ab.
+  Heißt das erzeugte Projekt selbst `mcp`, versucht `uv lock`, das Projekt als
+  Abhängigkeit seiner selbst aufzulösen, und bricht mit einer
+  unsatisfiable-Resolution ab.
+- **Handhabung**: Für Profil-Checks ein Ziel wie `mcp-project` verwenden;
+  Nutzerbeispiele nennen einen fachlichen Namen wie `arithmetic-mcp`. Der
+  Profilname bleibt `mcp`, nur der Projektname muss abweichen.
+- **Involvierte ADRs**: ADR-0005.
+- **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` deshalb als
+  `mcp-project` an; die übrigen Profile behalten ihren Profilnamen.
+
 ## Herkunft
 
 - lupysta_version: `0.11.0`

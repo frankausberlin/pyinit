@@ -39,7 +39,7 @@ def context_for(profile: Profile, target: Path) -> Context:
     )
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
 def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     """Test."""
     catalog = load_catalog()
@@ -66,7 +66,7 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
         assert "run" in recipe_names(justfile.content)
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "mcp"])
 def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Path) -> None:
     """A dotted project name stays a single command key in TOML."""
     catalog = load_catalog()
@@ -78,7 +78,7 @@ def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Pa
     assert scripts == {"my.project": "my_project.main:main"}
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "mcp"])
 def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: Path) -> None:
     """Names without a dot produce the same command key as before."""
     catalog = load_catalog()
@@ -88,6 +88,39 @@ def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: 
     pyproject = next(item for item in files if item.target == "pyproject.toml")
     scripts = tomllib.loads(pyproject.content)["project"]["scripts"]
     assert scripts == {"demo": "demo.main:main"}
+
+
+def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> None:
+    """The MCP profile ships a server, stdio entry point, and Inspector recipe."""
+    catalog = load_catalog()
+    profile = catalog.profile("mcp")
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    by_target = {item.target: item.content for item in files}
+    assert 'mcp = MCPServer("demo")' in by_target["src/demo/server.py"]
+    assert "mcp.run()" in by_target["src/demo/main.py"]
+    assert "from demo.server import mcp" in by_target["src/demo/main.py"]
+    assert "Client(mcp, raise_exceptions=True)" in by_target["tests/test_smoke.py"]
+    assert "mcp-dev" in recipe_names(by_target["Justfile"])
+    assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0" in by_target["Justfile"]
+    assert "mcp run src/demo/server.py" in by_target["Justfile"]
+    assert "## MCP Server" in by_target["README.md"]
+    assert "just mcp-dev" in by_target["README.md"]
+    assert "App (MCP-Server)" in by_target["AGENTS.md"]
+    data = tomllib.loads(by_target["pyproject.toml"])
+    assert data["project"]["dependencies"] == ["mcp>=2.3.0,<3"]
+    assert data["dependency-groups"]["dev"] == [
+        "basedpyright>=1.40.2",
+        "bump-my-version>=1.6.7",
+        "pip-audit>=2.10.1",
+        "pre-commit>=4.7.0",
+        "pytest>=9.1.1",
+        "pytest-cov>=7.1.0",
+        "ruff>=0.17.2",
+        "mcp[cli]>=2.3.0,<3",
+        "radon>=6.0.1",
+        "vulture>=2.16",
+    ]
+    assert data["project"]["scripts"] == {"demo": "demo.main:main"}
 
 
 def test_profile_without_entrypoint_omits_scripts_and_run(tmp_path: Path) -> None:

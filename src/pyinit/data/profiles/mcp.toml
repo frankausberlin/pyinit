@@ -1,0 +1,4 @@
+id = "mcp"
+description = "Application with an MCP server"
+mode = "app"
+artifacts = ["agent-docs", "adr", "ap", "mcp", "e2e", "agent", "refactor"]

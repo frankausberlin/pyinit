@@ -1,0 +1,12 @@
+"""Entry point for {{ project_name }}."""
+
+from {{ package_name }}.server import mcp
+
+
+def main() -> None:
+    """Run the {{ project_name }} MCP server over stdio."""
+    mcp.run()
+
+
+if __name__ == "__main__":
+    main()

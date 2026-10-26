@@ -1,0 +1,3 @@
+# Open the MCP server in the pinned MCP Inspector on loopback (requires Node.js and npx)
+mcp-dev:
+    HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0 uv run --with "mcp[cli]>=2.3.0,<3" mcp run src/{{ package_name }}/server.py

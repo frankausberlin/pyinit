@@ -9,11 +9,20 @@ unset VIRTUAL_ENV UV_PROJECT_ENVIRONMENT UV_PROJECT UV_WORKING_DIR PYTHONHOME PY
 export UV_PYTHON_PREFERENCE=only-managed
 
 artifacts="$(mktemp -d "$PWD/generated-artifacts.XXXXXX")"
-profiles=(app app-cli lib)
+profiles_text="$(uv run pyinit list | cut -f1)"
+if [[ -z "$profiles_text" ]]; then
+    echo "Error: pyinit list returned no profiles." >&2
+    exit 1
+fi
+mapfile -t profiles <<<"$profiles_text"
 failed=""
 
 for profile in "${profiles[@]}"; do
-    destination="$artifacts/$profile"
+    project="$profile"
+    if [[ "$profile" == "mcp" ]]; then
+        project="mcp-project"
+    fi
+    destination="$artifacts/$project"
     log="$artifacts/$profile.log"
     echo "Generating profile '$profile' in $destination..."
     if ! uv run pyinit new "$profile" "$destination" --no-check >"$log" 2>&1; then

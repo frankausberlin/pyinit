@@ -10,7 +10,7 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 
 - Projektname: `{{ project_name }}`
 - Paketname: `{{ package_name }}`
-- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "cli" in artifacts %}App (CLI){% else %}App{% endif %}
+- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "cli" in artifacts %}App (CLI){% elif "mcp" in artifacts %}App (MCP-Server){% else %}App{% endif %}
 - Python-Version: `{{ python_version }}`
 - Quellpfad: `src/{{ package_name }}/`
 - Testpfad: `tests/`
@@ -31,7 +31,12 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Das Verzeichnis-Gate steht in `tests/conftest.py`; die Suite-Guards brechen
   ab, bevor Testmodule importiert werden, wenn eine Suite ohne Opt-in
   gesammelt wird.
-{% if "adr" in artifacts %}
+{% if "mcp" in artifacts %}- `just run` startet den MCP-Server über stdio. `just mcp-dev` öffnet den
+  gepinnten MCP Inspector auf Loopback über `npx` und braucht Node.js; beides
+  ist nicht Teil von `just check`.
+- `tests/test_smoke.py` prüft Tool, Resource und Entrypoint über den
+  In-Memory-`Client` des SDK.
+{% endif %}{% if "adr" in artifacts %}
 ## ADRs
 
 Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit

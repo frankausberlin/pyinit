@@ -66,7 +66,7 @@ def tools(name: str) -> str:
     return f"/usr/bin/{name}"
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
 def test_dry_run_writes_nothing(profile_id: str, tmp_path: Path) -> None:
     """Test."""
     target = tmp_path / "demo"

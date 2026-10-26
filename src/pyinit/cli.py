@@ -95,17 +95,22 @@ def describe(identifier: Annotated[str, typer.Argument(help="Profile or artifact
     """Show a profile or artifact."""
     try:
         catalog = load_catalog()
-        lines: list[str]
-        if identifier in catalog.profiles:
-            profile = catalog.profiles[identifier]
+        profile = catalog.profiles.get(identifier)
+        artifact = catalog.artifacts.get(identifier)
+        if profile is None and artifact is None:
+            catalog.artifact(identifier)
+        lines: list[str] = []
+        if profile is not None:
             lines = [
                 f"Profile: {profile.id}",
                 f"Description: {profile.description}",
                 f"Mode: {profile.mode}",
                 f"Artifacts: {', '.join(profile.artifacts)}",
             ]
-        else:
-            lines = _artifact_lines(catalog, identifier)
+        if artifact is not None:
+            if lines:
+                lines.append("")
+            lines.extend(_artifact_lines(catalog, identifier))
     except PyinitError as error:
         _fail(error)
     typer.echo("\n".join(lines))

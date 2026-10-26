@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyinit.discovery import Catalog
+from pyinit.discovery import Catalog, load_catalog
 from pyinit.errors import (
     ArtifactNotFoundError,
     ConflictError,
@@ -163,3 +163,33 @@ def test_docs_capability() -> None:
     result = resolve(data.profiles["test"], data)
     assert result.needs_docs is True
     assert result.capabilities == frozenset({"docs.cli"})
+
+
+@pytest.mark.parametrize("conflicting", ["cli", "app-main"])
+def test_mcp_conflicts_with_other_entrypoints(conflicting: str) -> None:
+    """The MCP artifact cannot be combined with another entry point artifact."""
+    data = load_catalog()
+    profile = Profile(id="test", description="", mode="app", artifacts=("mcp", conflicting))
+    with pytest.raises(ConflictError, match=conflicting):
+        resolve(profile, data)
+
+
+def test_mcp_profile_resolves_entrypoint_capability() -> None:
+    """The bundled MCP profile provides exactly one MCP entry point."""
+    data = load_catalog()
+    resolution = resolve(data.profile("mcp"), data)
+    assert [item.id for item in resolution.artifacts] == [
+        "base-app",
+        "agent-docs",
+        "adr",
+        "ap",
+        "mcp",
+        "e2e",
+        "agent",
+        "refactor",
+    ]
+    assert {capability for capability in resolution.capabilities if capability.startswith("entrypoint.")} == {
+        "entrypoint.mcp"
+    }
+    assert resolution.runtime_dependencies == ("mcp>=2.3.0,<3",)
+    assert "mcp[cli]>=2.3.0,<3" in resolution.dev_dependencies
