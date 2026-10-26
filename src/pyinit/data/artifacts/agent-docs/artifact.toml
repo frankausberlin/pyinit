@@ -1,0 +1,7 @@
+id = "agent-docs"
+description = "AGENTS.md and the journal convention"
+provides = ["agents.docs"]
+files = [
+  { source = "templates/AGENTS.md.j2", target = "AGENTS.md" },
+  { source = "files/journal-README.md", target = "journal/README.md", render = false },
+]

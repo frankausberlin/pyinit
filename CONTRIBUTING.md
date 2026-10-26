@@ -45,12 +45,15 @@ just docs-check   # verify the generated CLI reference is current
 just check        # full gate (lint + typecheck + docs + tests)
 just test-e2e     # Docker E2E suite locally (not part of just check)
 just test-agent   # provider suite manually (not part of just check)
+just test-generated  # generate all profiles and run their quality gates
 just fix          # auto-fix formatting and lint issues
 ```
 
 `just check` runs unit and smoke tests only. The E2E suite is not part of the
 gate and runs in CI automatically once tests exist; agent tests are manual-only
 and never run in CI. An empty suite prints a hint and exits 0.
+`just test-generated` is the opt-in host/CI gate for generated projects: it
+needs network access and runs `just check` inside each generated profile.
 
 ## Conventions
 

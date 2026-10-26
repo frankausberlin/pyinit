@@ -1,0 +1,7 @@
+# Regenerate docs/reference/cli.md from the Typer app
+docs:
+    uv run python scripts/gen_cli_docs.py
+
+# Verify docs/reference/cli.md matches the Typer app (no write; part of `just check`)
+docs-check:
+    uv run python scripts/gen_cli_docs.py --check

@@ -1,5 +1,23 @@
 # pyinit
 
+Data-driven generator for new Python projects from the Luxus-Python-Stack.
+
+## Usage
+
+```bash
+uv run pyinit list                                  # show bundled profiles
+uv run pyinit describe app-cli                      # show a profile or artifact
+uv run pyinit new app-cli my-project                # generate an application
+uv run pyinit new lib my-lib --python 3.13          # library with MkDocs
+uv run pyinit new app . --dry-run                   # print the plan, write nothing
+```
+
+Available profiles are `app`, `app-cli`, and `lib`. Generation writes only new
+projects; it never updates or merges into an existing project. A target must be
+missing, empty, or contain only `.git`. Use `--no-check` to skip the final
+`just check`, and `--profile-file` to load an external profile (artifacts stay
+bundled).
+
 ## Getting Started
 
 ```bash
@@ -22,11 +40,17 @@ just merge       # fast-forward main to a branch from any checkout (no push)
 just check       # full quality gate (unit/smoke tests only)
 just test-e2e    # Docker E2E suite locally (hint + exit 0 until tests exist)
 just test-agent  # provider suite manually (hint + exit 0 until tests exist)
+just test-generated  # generate every profile and run its quality gate
 ```
 
 `just check` runs unit and smoke tests only. The E2E suite is not part of the
 gate: run it locally with `just test-e2e`; CI runs it automatically once test
 files exist. Agent tests are manual-only and never run in CI.
+
+`just test-generated` needs network access and the real `uv`/`just` toolchain.
+It generates `app`, `app-cli`, and `lib` under `generated-artifacts.*` and runs
+`just check` inside each project. The hermetic Docker suite never runs it: it
+checks plans and fake-toolchain applies instead.
 
 ## Documentation
 

@@ -12,6 +12,10 @@ test-e2e:
 test-agent:
     bash scripts/test-agent.sh
 
+# Generate every bundled profile and run its quality gate (host/CI, needs network)
+test-generated:
+    bash scripts/test-generated.sh
+
 # Run linters and type checker (find errors)
 lint:
     uv run ruff check .
@@ -33,13 +37,13 @@ clean:
     set -euo pipefail
     rm -rf .pytest_cache .ruff_cache .mypy_cache .coverage htmlcov site
     rm -rf build dist ./*.egg-info
-    rm -rf e2e-artifacts.* agent-artifacts.*
+    rm -rf e2e-artifacts.* agent-artifacts.* generated-artifacts.*
     if [ -d .refactor ]; then
         find .refactor -mindepth 1 -maxdepth 1 ! -name baselines -exec rm -rf {} +
     fi
     find . -path ./.venv -prune -o -path ./.git -prune -o -type d -name __pycache__ -print -exec rm -rf {} +
     find . -path ./.venv -prune -o -path ./.git -prune -o -type f \( -name '*.pyc' -o -name '*.pyo' \) -print -exec rm -f {} +
-    echo "Cleaned caches and generated artifacts, including e2e-artifacts.* and agent-artifacts.* (kept .refactor/baselines, .venv and journal/)."
+    echo "Cleaned caches and generated artifacts, including e2e-artifacts.*, agent-artifacts.* and generated-artifacts.* (kept .refactor/baselines, .venv and journal/)."
 
 # Audit dependencies for known security vulnerabilities
 audit:

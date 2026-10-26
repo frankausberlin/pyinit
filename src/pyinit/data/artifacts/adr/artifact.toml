@@ -1,0 +1,7 @@
+id = "adr"
+description = "Architecture Decision Record convention and directory"
+requires = ["agent-docs"]
+provides = ["agents.adr"]
+files = [
+  { source = "files/README.md", target = "docs/adr/README.md", render = false },
+]

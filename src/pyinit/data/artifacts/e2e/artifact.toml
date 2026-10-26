@@ -1,0 +1,13 @@
+id = "e2e"
+description = "Docker E2E suite, runner script, dependency group, and workflow"
+provides = ["suite.e2e"]
+e2e_dependencies = ["pytest>=9.1.1"]
+files = [
+  { source = "files/README.md", target = "tests/e2e/README.md", render = false },
+  { source = "files/conftest.py", target = "tests/e2e/conftest.py", render = false },
+  { source = "files/Dockerfile", target = "tests/e2e/Dockerfile", render = false },
+  { source = "files/dockerignore", target = ".dockerignore", render = false },
+  { source = "files/test-e2e.sh", target = "scripts/test-e2e.sh", render = false, executable = true },
+  { source = "files/e2e.yml", target = ".github/workflows/e2e.yml", render = false },
+]
+just_fragments = ["templates/justfile.j2"]

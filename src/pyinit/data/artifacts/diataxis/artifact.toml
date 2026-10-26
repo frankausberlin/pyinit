@@ -1,0 +1,15 @@
+id = "diataxis"
+description = "MkDocs site, Diataxis documentation tree, and documentation recipes"
+modes = ["lib"]
+provides = ["docs.mkdocs"]
+dev_dependencies = ["mkdocs-material", "mkdocstrings[python]"]
+files = [
+  { source = "templates/mkdocs.yml.j2", target = "mkdocs.yml" },
+  { source = "templates/index.md.j2", target = "docs/index.md" },
+  { source = "templates/api.md.j2", target = "docs/api.md" },
+  { source = "files/tutorials-index.md", target = "docs/tutorials/index.md", render = false },
+  { source = "files/how-to-index.md", target = "docs/how-to/index.md", render = false },
+  { source = "files/reference-index.md", target = "docs/reference/index.md", render = false },
+  { source = "files/explanation-index.md", target = "docs/explanation/index.md", render = false },
+]
+just_fragments = ["templates/justfile.j2"]

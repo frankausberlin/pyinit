@@ -1,0 +1,4 @@
+id = "app"
+description = "Application with a simple entry point"
+mode = "app"
+artifacts = ["agent-docs", "adr", "ap", "app-main", "e2e", "agent", "refactor"]

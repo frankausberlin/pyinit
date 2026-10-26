@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fake git for hermetic generator tests.
+if [ "$1" = "config" ] && [ "$2" = "user.name" ]; then
+    printf 'E2E Author\n'
+fi
+exit 0

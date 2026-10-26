@@ -1,0 +1,4 @@
+id = "ap"
+description = "Attention Point section in AGENTS.md"
+requires = ["agent-docs"]
+provides = ["agents.ap"]

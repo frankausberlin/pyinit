@@ -1,0 +1,9 @@
+id = "agent"
+description = "Opt-in provider suite, runner script, and recipe"
+provides = ["suite.agent"]
+files = [
+  { source = "files/README.md", target = "tests/agent/README.md", render = false },
+  { source = "files/conftest.py", target = "tests/agent/conftest.py", render = false },
+  { source = "files/test-agent.sh", target = "scripts/test-agent.sh", render = false, executable = true },
+]
+just_fragments = ["templates/justfile.j2"]

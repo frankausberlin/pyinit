@@ -1,0 +1,3 @@
+#!/bin/sh
+# Fake just for hermetic generator tests.
+exit 0

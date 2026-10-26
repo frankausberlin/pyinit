@@ -1,0 +1,11 @@
+# Build documentation
+docs:
+    uv run mkdocs build
+
+# Verify the documentation builds strictly (part of `just check`)
+docs-check:
+    uv run mkdocs build --strict
+
+# Serve documentation locally (with live reload)
+docs-serve:
+    uv run mkdocs serve

@@ -31,6 +31,21 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Das Verzeichnis-Gate steht in `tests/conftest.py`; die Suite-Guards brechen
   ab, bevor Testmodule importiert werden, wenn eine Suite ohne Opt-in
   gesammelt wird.
+- `just test-generated` ist die opt-in Prüfung der erzeugten Projekte. Sie
+  läuft auf dem Host bzw. in CI, braucht Netzwerk und die echte
+  `uv`/`just`-Toolchain. Die hermetische Docker-Suite prüft stattdessen
+  `--dry-run`, Dateipläne und Atomarität mit einer Fake-Toolchain.
+
+## Generator
+
+- Die CLI heißt `pyinit` und bietet `new`, `list` und `describe`.
+- Profile und Artefakte liegen als TOML unter `src/pyinit/data/`. Profile
+  referenzieren Artefakt-IDs, keine Template-Pfade.
+- Basisartefakte `base-app`/`base-lib` werden aus dem Profilmodus injiziert.
+- Gemeinsame Dateien werden genau einmal von der Basis oder `agent-docs`
+  gerendert; Artefakte liefern Includes und Justfile-Fragmente.
+- Tests für den Generator gehören in `tests/`; erzeugte Projekte werden über
+  `just test-generated` geprüft.
 
 ## ADRs
 
@@ -63,6 +78,17 @@ Format eines Eintrags:
 Entfernte APs bleiben als `### AP-N: entfernt (YYYY-MM-DD)` stehen; ihre
 Nummer wird nicht neu vergeben.
 -->
+
+### AP-1: Generierte Projektprüfung gehört in `test-generated`
+
+- **Situation**: Erzeugte Projekte brauchen `uv sync`, Netzwerk und die echte
+  `just`-Toolchain. Die Docker-Suite läuft hermetisch mit `--network none`.
+- **Handhabung**: `just check` im erzeugten Projekt läuft über
+  `just test-generated` auf dem Host bzw. in CI. Die Docker-Suite prüft
+  stattdessen `--dry-run`, Dateipläne und Atomarität mit Fake-Tools.
+- **Involvierte ADRs**: ADR-0001, ADR-0003.
+- **Kontext**: Ein grüner Generator-Test soll nicht durch fehlendes Netzwerk
+  oder einen anderen Interpreter im Container verfälscht werden.
 
 ## Herkunft
 

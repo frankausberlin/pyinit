@@ -1,0 +1,32 @@
+id = "base-lib"
+description = "Library base: application base plus release workflow and library smoke test"
+files = [
+  { source = "templates/pyproject.toml.j2", target = "pyproject.toml" },
+  { source = "templates/justfile.j2", target = "Justfile" },
+  { source = "templates/readme.md.j2", target = "README.md" },
+  { source = "templates/contributing.md.j2", target = "CONTRIBUTING.md" },
+  { source = "templates/license.j2", target = "LICENSE" },
+  { source = "templates/python-version.j2", target = ".python-version" },
+  { source = "templates/init.py.j2", target = "src/{{ package_name }}/__init__.py" },
+  { source = "templates/pyinit.toml.j2", target = "pyinit.toml" },
+  { source = "templates/lib-test_smoke.py.j2", target = "tests/test_smoke.py" },
+  { source = "files/.gitignore", target = ".gitignore", render = false },
+  { source = "files/.editorconfig", target = ".editorconfig", render = false },
+  { source = "files/.envrc", target = ".envrc", render = false },
+  { source = "files/.pre-commit-config.yaml", target = ".pre-commit-config.yaml", render = false },
+  { source = "files/tests-conftest.py", target = "tests/conftest.py", render = false },
+  { source = "files/ci.yml", target = ".github/workflows/ci.yml", render = false },
+  { source = "files/release.yml", target = ".github/workflows/release.yml", render = false },
+  { source = "files/settings.json", target = ".vscode/settings.json", render = false },
+  { source = "files/launch.json", target = ".vscode/launch.json", render = false },
+  { source = "files/extensions.json", target = ".vscode/extensions.json", render = false },
+]
+dev_dependencies = [
+  "basedpyright>=1.40.2",
+  "bump-my-version>=1.6.7",
+  "pip-audit>=2.10.1",
+  "pre-commit>=4.7.0",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "ruff>=0.17.2",
+]

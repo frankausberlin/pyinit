@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - uses: extractions/setup-just@v4
+      - run: uv sync --locked --dev
+      - run: just check
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: check
+    # PyPI Trusted Publishing: register this repository and the environment
+    # name below as a trusted publisher in the PyPI project settings before
+    # the first release. The names must match exactly.
+    environment: pypi
+    permissions:
+      contents: read    # actions/checkout reads the repository
+      id-token: write   # OIDC token for PyPI Trusted Publishing
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - name: Verify the tag matches the project version
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          test "v${version}" = "${GITHUB_REF_NAME}"
+      - run: uv build
+      - run: uv publish

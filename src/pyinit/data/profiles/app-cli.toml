@@ -1,0 +1,4 @@
+id = "app-cli"
+description = "Application with a Typer CLI"
+mode = "app"
+artifacts = ["agent-docs", "adr", "ap", "cli", "e2e", "agent", "refactor"]

@@ -1,0 +1,19 @@
+"""Command-line interface for {{ project_name }}."""
+
+import typer
+
+app = typer.Typer(
+    name="{{ project_name }}",
+    help="Command-line interface for {{ project_name }}.",
+    no_args_is_help=True,
+)
+
+
+@app.command()
+def hello(name: str = "world") -> None:
+    """Print a greeting."""
+    typer.echo(f"Hello, {name}!")
+
+
+if __name__ == "__main__":
+    app()

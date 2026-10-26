@@ -1,0 +1,30 @@
+site_name: {{ project_name }}
+site_description: Documentation for {{ project_name }}
+repo_url: https://github.com/YOUR_ORG/{{ project_name }}
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+
+nav:
+  - Home: index.md
+  - Tutorials: tutorials/index.md
+  - How-to Guides: how-to/index.md
+  - Reference:
+      - Overview: reference/index.md
+      - API: api.md
+  - Explanation: explanation/index.md

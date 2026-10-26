@@ -31,6 +31,7 @@ site/
 # Opt-in suite artifacts
 e2e-artifacts.*
 agent-artifacts.*
+generated-artifacts.*
 
 # Freestyle scratch space
 ignore/

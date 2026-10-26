@@ -1,12 +1,12 @@
-"""Smoke test for the pyinit application."""
+"""Smoke test for the {{ project_name }} application."""
 
 import sys
 
 import pytest
 from typer.testing import CliRunner
 
-from pyinit import main as main_module
-from pyinit.cli import app
+from {{ package_name }} import main as main_module
+from {{ package_name }}.cli import app
 
 runner = CliRunner()
 
@@ -20,7 +20,7 @@ def test_cli_hello() -> None:
 
 def test_entry_point_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     """Run the console entry point with a patched command line."""
-    monkeypatch.setattr(sys, "argv", ["pyinit", "--name", "tester"])
+    monkeypatch.setattr(sys, "argv", ["{{ project_name }}", "--name", "tester"])
     with pytest.raises(SystemExit) as excinfo:
         main_module.main()
     assert excinfo.value.code == 0

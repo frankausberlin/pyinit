@@ -1,0 +1,4 @@
+id = "lib"
+description = "Library with MkDocs documentation"
+mode = "lib"
+artifacts = ["agent-docs", "adr", "ap", "e2e", "agent", "refactor", "diataxis"]

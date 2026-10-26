@@ -1,0 +1,8 @@
+id = "refactor"
+description = "Design metrics, refactoring session recipe, radon and vulture"
+provides = ["refactor"]
+dev_dependencies = ["radon>=6.0.1", "vulture>=2.16"]
+files = [
+  { source = "files/design_report.py", target = "scripts/design_report.py", render = false },
+]
+just_fragments = ["templates/justfile.j2"]

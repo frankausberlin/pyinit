@@ -1,0 +1,14 @@
+id = "cli"
+description = "Typer CLI, entrypoint, CLI reference, and documentation recipes"
+requires = []
+conflicts = ["mcp"]
+modes = ["app"]
+provides = ["entrypoint.cli", "docs.cli"]
+runtime_dependencies = ["typer>=0.27.3"]
+files = [
+  { source = "templates/cli.py.j2", target = "src/{{ package_name }}/cli.py" },
+  { source = "templates/main.py.j2", target = "src/{{ package_name }}/main.py" },
+  { source = "templates/test_smoke.py.j2", target = "tests/test_smoke.py" },
+  { source = "templates/gen_cli_docs.py.j2", target = "scripts/gen_cli_docs.py" },
+]
+just_fragments = ["templates/justfile.j2"]

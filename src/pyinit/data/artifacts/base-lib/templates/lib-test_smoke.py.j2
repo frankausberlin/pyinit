@@ -1,0 +1,10 @@
+"""Smoke test for the {{ project_name }} library."""
+
+from importlib.metadata import version
+
+import {{ package_name }}
+
+
+def test_package_version() -> None:
+    """Verify the package version matches the installed project metadata."""
+    assert {{ package_name }}.__version__ == version("{{ project_name }}")

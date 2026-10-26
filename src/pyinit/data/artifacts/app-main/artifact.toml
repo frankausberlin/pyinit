@@ -1,0 +1,8 @@
+id = "app-main"
+description = "Application entry point with a print statement and a smoke test"
+modes = ["app"]
+provides = ["entrypoint.app"]
+files = [
+  { source = "templates/main.py.j2", target = "src/{{ package_name }}/main.py" },
+  { source = "templates/test_smoke.py.j2", target = "tests/test_smoke.py" },
+]

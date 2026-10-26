@@ -1,0 +1,32 @@
+{% raw %}
+# Write or compare design metrics (run | save <name> | compare <name>)
+rate-design *args:
+    uv run python scripts/design_report.py {{args}}
+
+# Prepare a refactoring session: clean tree, quality gate, baseline, branch. Changes no code.
+refactor name="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "Error: working tree is dirty; commit or stash first." >&2
+        exit 1
+    fi
+    just check
+    slug="{{name}}"
+    slug="${slug:-$(date -u +%Y%m%d-%H%M%S)}"
+    slug="$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-')"
+    slug="${slug#-}"
+    slug="${slug%-}"
+    if [ -z "$slug" ]; then
+        slug="session"
+    fi
+    branch="refactor/${slug}"
+    if git show-ref --verify --quiet "refs/heads/${branch}"; then
+        echo "Error: branch '$branch' already exists." >&2
+        exit 1
+    fi
+    just rate-design save "$slug"
+    git switch -c "$branch"
+    echo "Branch '$branch' created. Baseline in .refactor/baselines/$slug/."
+    echo "Proceed with the lupysta refactoring recipe; this recipe does not refactor."
+{% endraw %}

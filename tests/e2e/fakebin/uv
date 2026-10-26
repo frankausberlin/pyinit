@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fake uv for hermetic generator tests: succeed and create a lock file.
+if [ "$1" = "lock" ]; then
+    printf '# fake lock\n' > uv.lock
+fi
+exit 0

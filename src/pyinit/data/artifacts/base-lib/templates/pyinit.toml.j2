@@ -1,0 +1,15 @@
+[pyinit]
+schema = 1
+version = "{{ pyinit_version }}"
+profile = "{{ profile }}"
+mode = "{{ mode }}"
+artifacts = [
+{% for artifact in artifacts %}    "{{ artifact }}",
+{% endfor %}]
+generated_at = "{{ generated_at }}"
+
+[project]
+name = "{{ project_name }}"
+package = "{{ package_name }}"
+python = "{{ python_version }}"
+contract_version = {{ contract_version }}

@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "jinja2>=3.1",
     "typer>=0.27.3",
 ]
 
@@ -59,6 +60,9 @@ markers = [
     "e2e: opt-in Docker suite; run only via `just test-e2e`",
     "agent: opt-in provider suite; run only via `just test-agent`",
 ]
+
+[tool.coverage.run]
+omit = ["src/pyinit/data/*"]
 
 [tool.coverage.report]
 fail_under = 90
