@@ -116,7 +116,34 @@ def test_dependencies_deduplicate_same_normalized_name() -> None:
     first = artifact("first", runtime_dependencies=("zope.interface>=1",))
     second = artifact("second", runtime_dependencies=("zope-interface>=1",))
     data = catalog(first, second)
-    with pytest.raises(DependencyConflictError):
+    result = resolve(data.profiles["test"], data)
+    assert result.runtime_dependencies == ("zope.interface>=1",)
+
+
+def test_dependencies_deduplicate_normalized_extras() -> None:
+    """Test."""
+    first = artifact("first", runtime_dependencies=("pkg[security,socks]>=1",))
+    second = artifact("second", runtime_dependencies=("Pkg[ Socks , security ] >= 1",))
+    data = catalog(first, second)
+    result = resolve(data.profiles["test"], data)
+    assert result.runtime_dependencies == ("pkg[security,socks]>=1",)
+
+
+def test_dependencies_deduplicate_normalized_specifier() -> None:
+    """Test."""
+    first = artifact("first", runtime_dependencies=("pkg >= 1, < 2",))
+    second = artifact("second", runtime_dependencies=("pkg<2,>=1",))
+    data = catalog(first, second)
+    result = resolve(data.profiles["test"], data)
+    assert result.runtime_dependencies == ("pkg >= 1, < 2",)
+
+
+def test_dependencies_conflict_on_different_canonical_requirement() -> None:
+    """Test."""
+    first = artifact("first", runtime_dependencies=("pkg[a]>=1",))
+    second = artifact("second", runtime_dependencies=("pkg[b]>=1",))
+    data = catalog(first, second)
+    with pytest.raises(DependencyConflictError, match="conflicting constraints for 'pkg'"):
         resolve(data.profiles["test"], data)
 
 

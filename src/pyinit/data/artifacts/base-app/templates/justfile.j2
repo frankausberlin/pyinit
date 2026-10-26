@@ -57,7 +57,7 @@ check:
     just docs-check
 {% endif %}
     uv run pytest --cov=src --cov-report=term-missing
-{% if mode == "app" %}
+{% if has_entrypoint %}
 # Run the installed command
 run:
     uv run {{ project_name }}

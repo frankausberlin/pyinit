@@ -16,7 +16,12 @@ from pyinit.errors import (
 )
 from pyinit.models import Artifact, Profile
 
-_DEPENDENCY_PATTERN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)")
+_DEPENDENCY_PATTERN = re.compile(
+    r"^\s*(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)"
+    r"(?:\s*\[(?P<extras>[^\]]*)\])?"
+    r"(?P<specifier>[^;]*)"
+    r"(?:;(?P<marker>.*))?$"
+)
 _UNIQUE_NAMESPACES = ("entrypoint.", "docs.")
 
 
@@ -42,26 +47,50 @@ class Resolution:
         return any(capability.startswith("docs.") for capability in self.capabilities)
 
 
-def _dependency_name(requirement: str) -> str:
+def _normalize_name(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _normalize_extras(extras: str | None) -> str:
+    if not extras:
+        return ""
+    normalized = sorted({_normalize_name(extra.strip()) for extra in extras.split(",") if extra.strip()})
+    return f"[{','.join(normalized)}]" if normalized else ""
+
+
+def _normalize_specifier(specifier: str) -> str:
+    compact = re.sub(r"\s+", "", specifier)
+    parts = sorted({part for part in compact.split(",") if part})
+    return ",".join(parts)
+
+
+def _canonical_requirement(requirement: str) -> tuple[str, str]:
     match = _DEPENDENCY_PATTERN.match(requirement)
     if match is None:
         raise DependencyConflictError(f"invalid dependency declaration '{requirement}'")
-    return re.sub(r"[-_.]+", "-", match.group(1)).lower()
+    name = _normalize_name(match.group("name"))
+    canonical = name + _normalize_extras(match.group("extras")) + _normalize_specifier(match.group("specifier"))
+    marker = match.group("marker")
+    if marker and marker.strip():
+        canonical += f";{marker.strip()}"
+    return name, canonical
 
 
 def _merge_dependencies(groups: list[tuple[str, ...]]) -> tuple[str, ...]:
     seen: dict[str, str] = {}
+    seen_canonical: dict[str, str] = {}
     ordered: list[str] = []
     for group in groups:
         for requirement in group:
-            name = _dependency_name(requirement)
+            name, canonical = _canonical_requirement(requirement)
             if name in seen:
-                if seen[name] != requirement:
+                if seen_canonical[name] != canonical:
                     raise DependencyConflictError(
                         f"conflicting constraints for '{name}': '{seen[name]}' and '{requirement}'"
                     )
                 continue
             seen[name] = requirement
+            seen_canonical[name] = canonical
             ordered.append(requirement)
     return tuple(ordered)
 

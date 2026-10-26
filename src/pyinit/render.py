@@ -45,6 +45,7 @@ def _variables(context: Context, resolution: Resolution) -> dict[str, object]:
             "dev_dependencies": list(resolution.dev_dependencies),
             "e2e_dependencies": list(resolution.e2e_dependencies),
             "has_docs": resolution.needs_docs,
+            "has_entrypoint": any(capability.startswith("entrypoint.") for capability in resolution.capabilities),
             "capabilities": sorted(resolution.capabilities),
         }
     )

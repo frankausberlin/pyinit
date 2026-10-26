@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
+import shutil
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+from pyinit import apply as apply_module
 from pyinit.apply import apply_plan, generate
 from pyinit.context import FixedClock, build_context
 from pyinit.discovery import load_catalog
-from pyinit.errors import CommandFailedError, MissingToolError, TargetError
-from pyinit.models import Context, Profile
+from pyinit.errors import ApplyError, CommandFailedError, MissingToolError, TargetError
+from pyinit.models import Context, PlannedFile, Profile
 from pyinit.plan import build_plan, validate_target
-from pyinit.resolver import resolve
+from pyinit.resolver import Resolution, resolve
 from pyinit.runner import CommandResult
 
 CLOCK = FixedClock(datetime(2026, 10, 26, 20, 0, tzinfo=UTC))
@@ -47,6 +50,15 @@ class FakeRunner:
         if self.fail_on and command[: len(self.fail_on)] == self.fail_on:
             return CommandResult(1, "", "boom")
         return CommandResult(0, "", "")
+
+
+class ExplodingRunner:
+    """Runner that fails loudly when invoked."""
+
+    def run(self, args: Sequence[str], *, cwd: Path, env: Mapping[str, str]) -> CommandResult:
+        """Fail because the runner must not be used."""
+        del cwd, env
+        raise AssertionError(f"runner must not be called with {tuple(args)}")
 
 
 def tools(name: str) -> str:
@@ -89,6 +101,32 @@ def test_dry_run_and_apply_have_same_paths(tmp_path: Path) -> None:
     assert ("just", "check") not in [call[0] for call in runner.calls]
 
 
+def test_dry_run_does_not_require_tools_or_a_runner(tmp_path: Path) -> None:
+    """Test."""
+    target = tmp_path / "demo"
+
+    def no_which(name: str) -> str | None:
+        raise AssertionError(f"dry-run must not look up '{name}'")
+
+    plan = generate("app", target, dry_run=True, clock=CLOCK, runner=ExplodingRunner(), which=no_which)
+    assert plan.profile == "app"
+    assert not target.exists()
+
+
+def test_dry_run_rejects_invalid_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test."""
+    real_render = apply_module.render_files
+
+    def broken_render(resolution: Resolution, context: Context) -> tuple[PlannedFile, ...]:
+        files = real_render(resolution, context)
+        return tuple(replace(item, content="[project\n") if item.target == "pyproject.toml" else item for item in files)
+
+    monkeypatch.setattr(apply_module, "render_files", broken_render)
+    with pytest.raises(ApplyError, match=r"generated pyproject\.toml is invalid"):
+        generate("app", tmp_path / "demo", dry_run=True, clock=CLOCK, author_name="Tester")
+    assert not (tmp_path / "demo").exists()
+
+
 def test_no_check_command(tmp_path: Path) -> None:
     """Test."""
     plan = generate("app", tmp_path / "demo", dry_run=True, clock=CLOCK, author_name="Tester")
@@ -112,6 +150,35 @@ def test_git_only_target_skips_git_init(tmp_path: Path) -> None:
     assert ("git", "init", "-b", "main") not in [call[0] for call in runner.calls]
     assert (target / ".git").is_dir()
     assert (target / "pyproject.toml").is_file()
+
+
+@pytest.mark.parametrize("with_git", [False, True])
+def test_merge_failure_restores_existing_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    with_git: bool,
+) -> None:
+    """Test."""
+    target = tmp_path / "demo"
+    target.mkdir()
+    if with_git:
+        (target / ".git").mkdir()
+    real_move = shutil.move
+    calls = 0
+
+    def flaky_move(source: str, destination: str) -> str:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("boom")
+        return real_move(source, destination)
+
+    monkeypatch.setattr(apply_module.shutil, "move", flaky_move)
+    with pytest.raises(ApplyError, match="cannot move the staged project"):
+        generate("app", target, no_check=True, clock=CLOCK, author_name="Tester", runner=FakeRunner(), which=tools)
+    assert calls >= 2
+    assert sorted(entry.name for entry in target.iterdir()) == ([".git"] if with_git else [])
+    assert not list(tmp_path.glob(".demo.pyinit-*"))
 
 
 def test_non_empty_target_is_rejected(tmp_path: Path) -> None:
@@ -146,6 +213,20 @@ def test_missing_tool(tmp_path: Path) -> None:
             author_name="Tester",
             runner=FakeRunner(),
             which=lambda name: None if name == "uv" else "/bin/true",
+        )
+    assert not (tmp_path / "demo").exists()
+
+
+def test_missing_git_is_reported_before_author_resolution(tmp_path: Path) -> None:
+    """Test."""
+    with pytest.raises(MissingToolError, match="git"):
+        generate(
+            "app",
+            tmp_path / "demo",
+            no_check=True,
+            clock=CLOCK,
+            runner=ExplodingRunner(),
+            which=lambda name: None if name == "git" else "/bin/true",
         )
     assert not (tmp_path / "demo").exists()
 
@@ -216,3 +297,18 @@ def test_apply_plan_runs_staging_first(tmp_path: Path) -> None:
     apply_plan(plan, runner, which=tools)
     assert runner.calls[0][0] == ("uv", "lock")
     assert runner.calls[-1][0] == ("uv", "run", "pre-commit", "install")
+
+
+def test_apply_plan_rejects_invalid_pyproject(tmp_path: Path) -> None:
+    """Test."""
+    catalog = load_catalog()
+    profile = catalog.profile("app")
+    resolution = resolve(profile, catalog)
+    target = tmp_path / "demo"
+    context = context_for(profile, target)
+    files = (PlannedFile(target="pyproject.toml", content="[project\n"),)
+    plan = build_plan(resolution, context, files, target, no_check=True)
+    with pytest.raises(ApplyError, match=r"generated pyproject\.toml is invalid"):
+        apply_plan(plan, FakeRunner(), which=tools)
+    assert not target.exists()
+    assert not list(tmp_path.glob(".demo.pyinit-*"))

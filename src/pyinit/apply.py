@@ -11,7 +11,7 @@ from typing import cast
 
 from pyinit.context import Clock, SystemClock, build_context, resolve_author
 from pyinit.discovery import load_catalog
-from pyinit.errors import ApplyError, CommandFailedError, MissingToolError, PyinitError
+from pyinit.errors import ApplyError, CommandFailedError, MissingToolError
 from pyinit.models import Plan
 from pyinit.plan import build_plan, validate_target
 from pyinit.render import render_files
@@ -39,12 +39,11 @@ def _write_staging(stage: Path, plan: Plan) -> None:
             raise ApplyError(f"cannot write '{item.target}': {error}") from error
 
 
-def _validate_pyproject(stage: Path) -> None:
-    path = stage / "pyproject.toml"
+def validate_pyproject(content: str) -> None:
+    """Validate the rendered pyproject.toml content."""
     try:
-        with path.open("rb") as handle:
-            data = cast(dict[str, object], tomllib.load(handle))
-    except (OSError, tomllib.TOMLDecodeError) as error:
+        data = cast(dict[str, object], tomllib.loads(content))
+    except tomllib.TOMLDecodeError as error:
         raise ApplyError(f"generated pyproject.toml is invalid: {error}") from error
     project = data.get("project")
     if not isinstance(project, dict):
@@ -52,6 +51,15 @@ def _validate_pyproject(stage: Path) -> None:
     table = cast(dict[str, object], project)
     if not isinstance(table.get("name"), str):
         raise ApplyError("generated pyproject.toml has no [project] name")
+
+
+def _validate_staged_pyproject(stage: Path) -> None:
+    path = stage / "pyproject.toml"
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise ApplyError(f"generated pyproject.toml is invalid: {error}") from error
+    validate_pyproject(content)
 
 
 def _run_command(
@@ -81,10 +89,19 @@ def _move_staging(stage: Path, target: Path) -> None:
     if not target.exists():
         stage.rename(target)
         return
-    for entry in sorted(stage.iterdir(), key=lambda item: item.name):
-        if entry.name == ".git":
-            continue
-        shutil.move(str(entry), str(target / entry.name))
+    moved: list[str] = []
+    try:
+        for entry in sorted(stage.iterdir(), key=lambda item: item.name):
+            if entry.name == ".git":
+                continue
+            shutil.move(str(entry), str(target / entry.name))
+            moved.append(entry.name)
+    except BaseException:
+        for name in reversed(moved):
+            source = target / name
+            if source.exists() or source.is_symlink():
+                shutil.move(str(source), str(stage / name))
+        raise
     shutil.rmtree(stage)
 
 
@@ -97,7 +114,7 @@ def apply_plan(plan: Plan, runner: Runner, *, which: Which = shutil.which) -> No
     moved = False
     try:
         _write_staging(stage, plan)
-        _validate_pyproject(stage)
+        _validate_staged_pyproject(stage)
         staging_env = clean_environment(project_environment=stage / ".venv")
         staging_commands = [command for command in plan.commands if command.cwd == "staging"]
         for command in staging_commands:
@@ -111,14 +128,12 @@ def apply_plan(plan: Plan, runner: Runner, *, which: Which = shutil.which) -> No
             )
         _move_staging(stage, target)
         moved = True
-    except PyinitError:
+    except BaseException as error:
         if not moved:
             shutil.rmtree(stage, ignore_errors=True)
+        if isinstance(error, OSError):
+            raise ApplyError(f"cannot move the staged project into '{target}': {error}") from error
         raise
-    except OSError as error:
-        if not moved:
-            shutil.rmtree(stage, ignore_errors=True)
-        raise ApplyError(f"cannot move the staged project into '{target}': {error}") from error
 
     target_env = clean_environment(project_environment=target / ".venv")
     for command in plan.commands:
@@ -157,6 +172,8 @@ def generate(
     validate_target(target)
 
     command_runner: Runner = runner if runner is not None else SubprocessRunner()
+    if not dry_run:
+        _require_tools(which)
     if author_name is None:
         author_name = "Project Author" if dry_run else resolve_author(command_runner)
     context = build_context(
@@ -168,6 +185,10 @@ def generate(
     )
     resolution: Resolution = resolve(profile, catalog)
     files = render_files(resolution, context)
+    pyproject = next((item for item in files if item.target == "pyproject.toml"), None)
+    if pyproject is None:
+        raise ApplyError("generated pyproject.toml is missing")
+    validate_pyproject(pyproject.content)
     plan = build_plan(resolution, context, files, target, no_check=no_check)
     if not dry_run:
         apply_plan(plan, command_runner, which=which)

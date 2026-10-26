@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tomllib
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -56,6 +57,41 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     justfile = next(item for item in files if item.target == "Justfile")
     assert 'merge branch=""' in justfile.content
     assert "{{branch}}" in justfile.content
+    pyproject = next(item for item in files if item.target == "pyproject.toml")
+    if profile_id == "lib":
+        assert "[project.scripts]" not in pyproject.content
+        assert "run" not in recipe_names(justfile.content)
+    else:
+        assert "[project.scripts]" in pyproject.content
+        assert "run" in recipe_names(justfile.content)
+
+
+def test_profile_without_entrypoint_omits_scripts_and_run(tmp_path: Path) -> None:
+    """An app profile without an entrypoint artifact gets no command or run recipe."""
+    data = _catalog_with()
+    profile = data.profile("test")
+    files = render_files(resolve(profile, data), context_for(profile, tmp_path / "demo"))
+    by_target = {item.target: item for item in files}
+    assert "[project.scripts]" not in by_target["pyproject.toml"].content
+    assert "run" not in recipe_names(by_target["Justfile"].content)
+
+
+def test_author_name_is_escaped_in_pyproject(tmp_path: Path) -> None:
+    """Quotes and backslashes in the author name produce valid TOML."""
+    catalog = load_catalog()
+    profile = catalog.profile("app")
+    author = 'Zoe "Zed" \\ Backslash'
+    context = build_context(
+        profile=profile,
+        target=tmp_path / "demo",
+        python_version="3.12",
+        author_name=author,
+        clock=CLOCK,
+    )
+    files = render_files(resolve(profile, catalog), context)
+    pyproject = next(item for item in files if item.target == "pyproject.toml")
+    data = tomllib.loads(pyproject.content)
+    assert data["project"]["authors"] == [{"name": author}]
 
 
 def test_static_files_and_executables(tmp_path: Path) -> None:

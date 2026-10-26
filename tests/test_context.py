@@ -24,13 +24,19 @@ FIXED = FixedClock(datetime(2024, 3, 4, 5, 6, 7, tzinfo=UTC))
 class FakeRunner:
     """Runner returning a configured result."""
 
-    def __init__(self, result: CommandResult) -> None:
+    def __init__(self, result: CommandResult | None = None, *, error: Exception | None = None) -> None:
         """Implement __init__."""
         self.result = result
+        self.error = error
+        self.environments: list[Mapping[str, str]] = []
 
     def run(self, args: Sequence[str], *, cwd: Path, env: Mapping[str, str]) -> CommandResult:
         """Implement run."""
-        del args, cwd, env
+        del args, cwd
+        self.environments.append(env)
+        if self.error is not None:
+            raise self.error
+        assert self.result is not None
         return self.result
 
 
@@ -54,11 +60,25 @@ def test_name_derivation(tmp_path: Path) -> None:
     assert derive_package_name("My-Cool.Project") == "my_cool_project"
 
 
-@pytest.mark.parametrize("name", ["1bad-start", "-leading", "with space", "tab\tname"])
+@pytest.mark.parametrize("name", ["1bad-start", "-leading", "with space", "tab\tname", "foo-", "foo.", "foo_"])
 def test_invalid_project_names(name: str) -> None:
     """Test."""
     with pytest.raises(InvalidNameError):
         derive_project_name(Path("/tmp") / name)
+
+
+def test_single_letter_project_name_is_valid() -> None:
+    """Test."""
+    assert derive_project_name(Path("/tmp") / "a") == "a"
+
+
+@pytest.mark.parametrize(
+    ("project_name", "expected"),
+    [("foo--bar", "foo_bar"), ("foo..bar", "foo_bar"), ("foo-_.bar", "foo_bar")],
+)
+def test_package_name_collapses_separator_runs(project_name: str, expected: str) -> None:
+    """Test."""
+    assert derive_package_name(project_name) == expected
 
 
 def test_keyword_package_name() -> None:
@@ -74,11 +94,24 @@ def test_resolve_author_uses_git(monkeypatch: pytest.MonkeyPatch) -> None:
     assert resolve_author(runner) == "Ada Lovelace"
 
 
+def test_resolve_author_uses_clean_environment() -> None:
+    """Test."""
+    runner = FakeRunner(CommandResult(0, "Ada Lovelace\n", ""))
+    assert resolve_author(runner) == "Ada Lovelace"
+    assert runner.environments
+    assert runner.environments[0]["UV_PYTHON_PREFERENCE"] == "only-managed"
+
+
 def test_resolve_author_falls_back() -> None:
     """Test."""
     runner = FakeRunner(CommandResult(1, "", "no user"))
     assert resolve_author(runner) == "Project Author"
     assert resolve_author(FakeRunner(CommandResult(0, "  ", ""))) == "Project Author"
+
+
+def test_resolve_author_falls_back_on_oserror() -> None:
+    """Test."""
+    assert resolve_author(FakeRunner(error=OSError("git is gone"))) == "Project Author"
 
 
 def test_build_context(tmp_path: Path) -> None:

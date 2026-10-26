@@ -5,8 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from pyinit import __version__
+
 SCHEMA_VERSION = 1
-PYINIT_VERSION = "0.1.0"
+PYINIT_VERSION = __version__
 CONTRACT_VERSION = 4
 MINIMUM_PYTHON = (3, 11)
 

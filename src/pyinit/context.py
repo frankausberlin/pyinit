@@ -11,9 +11,9 @@ from typing import Protocol
 
 from pyinit.errors import InvalidNameError, InvalidPythonVersionError
 from pyinit.models import MINIMUM_PYTHON, Context, Profile
-from pyinit.runner import Runner
+from pyinit.runner import Runner, clean_environment
 
-_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9._-]*$")
+_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$")
 _PACKAGE_NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
 _PYTHON_PATTERN = re.compile(r"^(\d+)\.(\d+)$")
 
@@ -64,14 +64,15 @@ def derive_project_name(target: Path) -> str:
         raise InvalidNameError("cannot derive a project name from the target directory")
     if _PROJECT_NAME_PATTERN.fullmatch(name) is None:
         raise InvalidNameError(
-            f"project name '{name}' is invalid; use letters, digits, '.', '_' and '-', starting with a letter or digit"
+            f"project name '{name}' is invalid; use letters, digits, '.', '_' and '-', "
+            "starting with a letter and ending with a letter or digit"
         )
     return name
 
 
 def derive_package_name(project_name: str) -> str:
     """Derive and validate a Python package name."""
-    package = project_name.lower().replace("-", "_").replace(".", "_")
+    package = re.sub(r"[-_.]+", "_", project_name).lower()
     if _PACKAGE_NAME_PATTERN.fullmatch(package) is None:
         raise InvalidNameError(
             f"package name '{package}' (derived from '{project_name}') is not a valid Python identifier"
@@ -83,7 +84,10 @@ def derive_package_name(project_name: str) -> str:
 
 def resolve_author(runner: Runner) -> str:
     """Read the author from git, falling back to a neutral name."""
-    result = runner.run(("git", "config", "user.name"), cwd=Path.cwd(), env={})
+    try:
+        result = runner.run(("git", "config", "user.name"), cwd=Path.cwd(), env=clean_environment())
+    except OSError:
+        return "Project Author"
     author = result.stdout.strip()
     if result.returncode == 0 and author:
         return author
