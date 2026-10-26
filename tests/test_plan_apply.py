@@ -14,7 +14,7 @@ from pyinit import apply as apply_module
 from pyinit.apply import apply_plan, generate
 from pyinit.context import FixedClock, build_context
 from pyinit.discovery import load_catalog
-from pyinit.errors import ApplyError, CommandFailedError, MissingToolError, TargetError
+from pyinit.errors import ApplyError, CommandFailedError, MissingToolError, SelfDependencyError, TargetError
 from pyinit.models import Context, PlannedFile, Profile
 from pyinit.plan import build_plan, validate_target
 from pyinit.resolver import Resolution, resolve
@@ -312,3 +312,53 @@ def test_apply_plan_rejects_invalid_pyproject(tmp_path: Path) -> None:
         apply_plan(plan, FakeRunner(), which=tools)
     assert not target.exists()
     assert not list(tmp_path.glob(".demo.pyinit-*"))
+
+
+@pytest.mark.parametrize("name", ["mcp", "MCP", "Mcp"])
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_mcp_project_name_is_rejected_before_staging(name: str, dry_run: bool, tmp_path: Path) -> None:
+    """A project named mcp fails before any generation command or staging."""
+    target = tmp_path / name
+    runner = FakeRunner()
+    with pytest.raises(SelfDependencyError, match="MCP SDK"):
+        generate(
+            "mcp",
+            target,
+            no_check=True,
+            dry_run=dry_run,
+            clock=CLOCK,
+            author_name="Tester",
+            runner=runner,
+            which=tools,
+        )
+    assert runner.calls == []
+    assert not target.exists()
+    assert not list(tmp_path.glob(f".{name}.pyinit-*"))
+
+
+def test_mcp_name_check_uses_resolved_artifacts(tmp_path: Path) -> None:
+    """An external profile cannot bypass the check by choosing another id."""
+    profile = tmp_path / "custom.toml"
+    profile.write_text('id = "custom"\nmode = "app"\nartifacts = ["mcp"]\n', encoding="utf-8")
+    with pytest.raises(SelfDependencyError, match="MCP SDK"):
+        generate(
+            "custom",
+            tmp_path / "mcp",
+            dry_run=True,
+            profile_file=profile,
+            clock=CLOCK,
+            author_name="Tester",
+        )
+
+
+def test_mcp_name_check_only_applies_on_collision(tmp_path: Path) -> None:
+    """A project named mcp is fine when the profile has no MCP dependency."""
+    plan = generate("app", tmp_path / "mcp", dry_run=True, clock=CLOCK, author_name="Tester")
+    assert plan.profile == "app"
+
+
+@pytest.mark.parametrize("name", ["arithmetic-mcp", "mcp-project", "my-mcp"])
+def test_mcp_profile_allows_non_colliding_project_names(name: str, tmp_path: Path) -> None:
+    """Names that merely contain mcp remain valid."""
+    plan = generate("mcp", tmp_path / name, dry_run=True, clock=CLOCK, author_name="Tester")
+    assert plan.target.name == name

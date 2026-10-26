@@ -56,7 +56,7 @@ def test_apply_mcp_with_fake_toolchain(monkeypatch: pytest.MonkeyPatch, tmp_path
     justfile = (target / "Justfile").read_text(encoding="utf-8")
     assert "mcp-dev" in justfile
     assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0" in justfile
-    assert "mcp run src/demo/server.py" in justfile
+    assert "uv run demo" in justfile
     assert not list(tmp_path.glob(".demo.pyinit-*"))
 
 

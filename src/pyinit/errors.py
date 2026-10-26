@@ -45,6 +45,10 @@ class DependencyConflictError(ResolutionError):
     """Two artifacts declare different constraints for the same dependency."""
 
 
+class SelfDependencyError(ResolutionError):
+    """The project name collides with one of its own dependencies."""
+
+
 class DuplicateRecipeError(ResolutionError):
     """Two Justfile fragments define the same recipe."""
 

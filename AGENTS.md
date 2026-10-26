@@ -96,11 +96,14 @@ Nummer wird nicht neu vergeben.
   Heißt das erzeugte Projekt selbst `mcp`, versucht `uv lock`, das Projekt als
   Abhängigkeit seiner selbst aufzulösen, und bricht mit einer
   unsatisfiable-Resolution ab.
-- **Handhabung**: Für Profil-Checks ein Ziel wie `mcp-project` verwenden;
-  Nutzerbeispiele nennen einen fachlichen Namen wie `arithmetic-mcp`. Der
-  Profilname bleibt `mcp`, nur der Projektname muss abweichen.
-- **Involvierte ADRs**: ADR-0005.
-- **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` deshalb als
+- **Handhabung**: `pyinit` lehnt den normalisierten Projektnamen `mcp` im
+  Preflight ab, sobald das aufgelöste Artefaktset die MCP-Abhängigkeit enthält;
+  das gilt auch für `--dry-run` und externe Profile. Für Profil-Checks und
+  Nutzerbeispiele ist ein abweichender Name nötig, etwa `mcp-project` oder ein
+  fachlicher Name wie `arithmetic-mcp`. Der Profilname bleibt `mcp`, nur der
+  Projektname muss abweichen.
+- **Involvierte ADRs**: ADR-0007.
+- **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` als
   `mcp-project` an; die übrigen Profile behalten ihren Profilnamen.
 
 ## Herkunft

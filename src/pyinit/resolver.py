@@ -13,6 +13,7 @@ from pyinit.errors import (
     DependencyConflictError,
     ModeConflictError,
     ProvideConflictError,
+    SelfDependencyError,
 )
 from pyinit.models import Artifact, Profile
 
@@ -161,6 +162,29 @@ def _order(catalog: Catalog, start: list[str]) -> tuple[Artifact, ...]:
     for artifact_id in start:
         visit(artifact_id)
     return tuple(ordered)
+
+
+def validate_project_dependencies(project_name: str, resolution: Resolution) -> None:
+    """Reject a project name that collides with one of its own dependencies."""
+    distribution = _normalize_name(project_name)
+    requirements = (
+        *resolution.runtime_dependencies,
+        *resolution.dev_dependencies,
+        *resolution.e2e_dependencies,
+    )
+    for requirement in requirements:
+        name, _ = _canonical_requirement(requirement)
+        if name != distribution:
+            continue
+        if distribution == "mcp":
+            raise SelfDependencyError(
+                f"project name '{project_name}' conflicts with the required MCP SDK dependency '{requirement}'; "
+                "choose a different project name, e.g. 'arithmetic-mcp'"
+            )
+        raise SelfDependencyError(
+            f"project name '{project_name}' conflicts with the required dependency '{requirement}'; "
+            "choose a different project name"
+        )
 
 
 def resolve(profile: Profile, catalog: Catalog) -> Resolution:

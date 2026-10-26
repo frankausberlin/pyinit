@@ -33,7 +33,9 @@ Verwende für die Entwicklung immer den lupysta-Skill.
   gesammelt wird.
 {% if "mcp" in artifacts %}- `just run` startet den MCP-Server über stdio. `just mcp-dev` öffnet den
   gepinnten MCP Inspector auf Loopback über `npx` und braucht Node.js; beides
-  ist nicht Teil von `just check`.
+  ist nicht Teil von `just check`. Der Inspector startet denselben
+  installierten Projekt-Entrypoint wie `just run`, damit relative Paketimporte
+  funktionieren.
 - `tests/test_smoke.py` prüft Tool, Resource und Entrypoint über den
   In-Memory-`Client` des SDK.
 {% endif %}{% if "adr" in artifacts %}

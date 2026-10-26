@@ -101,8 +101,8 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
     assert "from demo.server import mcp" in by_target["src/demo/main.py"]
     assert "Client(mcp, raise_exceptions=True)" in by_target["tests/test_smoke.py"]
     assert "mcp-dev" in recipe_names(by_target["Justfile"])
-    assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0" in by_target["Justfile"]
-    assert "mcp run src/demo/server.py" in by_target["Justfile"]
+    assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0 uv run demo" in by_target["Justfile"]
+    assert "mcp run src/demo/server.py" not in by_target["Justfile"]
     assert "## MCP Server" in by_target["README.md"]
     assert "just mcp-dev" in by_target["README.md"]
     assert "App (MCP-Server)" in by_target["AGENTS.md"]
@@ -116,7 +116,6 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
         "pytest>=9.1.1",
         "pytest-cov>=7.1.0",
         "ruff>=0.17.2",
-        "mcp[cli]>=2.3.0,<3",
         "radon>=6.0.1",
         "vulture>=2.16",
     ]

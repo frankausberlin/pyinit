@@ -12,9 +12,10 @@ from pyinit.errors import (
     DependencyConflictError,
     ModeConflictError,
     ProvideConflictError,
+    SelfDependencyError,
 )
 from pyinit.models import Artifact, Profile
-from pyinit.resolver import resolve
+from pyinit.resolver import resolve, validate_project_dependencies
 
 
 def artifact(identifier: str, **values: object) -> Artifact:
@@ -192,4 +193,28 @@ def test_mcp_profile_resolves_entrypoint_capability() -> None:
         "entrypoint.mcp"
     }
     assert resolution.runtime_dependencies == ("mcp>=2.3.0,<3",)
-    assert "mcp[cli]>=2.3.0,<3" in resolution.dev_dependencies
+    assert "mcp[cli]>=2.3.0,<3" not in resolution.dev_dependencies
+
+
+@pytest.mark.parametrize("name", ["mcp", "MCP", "Mcp"])
+def test_mcp_project_name_collides_with_sdk_dependency(name: str) -> None:
+    """The MCP profile rejects a project that would depend on itself."""
+    data = load_catalog()
+    resolution = resolve(data.profile("mcp"), data)
+    with pytest.raises(SelfDependencyError, match="MCP SDK"):
+        validate_project_dependencies(name, resolution)
+
+
+@pytest.mark.parametrize("name", ["arithmetic-mcp", "mcp-project", "my-mcp"])
+def test_mcp_project_names_without_collision_pass(name: str) -> None:
+    """Names that only contain 'mcp' remain allowed."""
+    data = load_catalog()
+    resolution = resolve(data.profile("mcp"), data)
+    validate_project_dependencies(name, resolution)
+
+
+def test_project_name_collision_depends_on_resolved_dependencies() -> None:
+    """A project named 'mcp' is fine when its closure has no MCP dependency."""
+    data = load_catalog()
+    resolution = resolve(data.profile("app"), data)
+    validate_project_dependencies("mcp", resolution)

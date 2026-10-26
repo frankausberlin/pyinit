@@ -47,7 +47,7 @@ def test_describe_profile_and_artifact() -> None:
     assert mcp_artifact.exit_code == 0
     assert "Provides: entrypoint.mcp" in mcp_artifact.output
     assert "Runtime dependencies: mcp>=2.3.0,<3" in mcp_artifact.output
-    assert "Development dependencies: mcp[cli]>=2.3.0,<3" in mcp_artifact.output
+    assert "Development dependencies:" not in mcp_artifact.output
 
 
 def test_describe_unknown() -> None:
@@ -109,3 +109,13 @@ def test_entry_point_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(SystemExit) as excinfo:
         main_module.main()
     assert excinfo.value.code == 0
+
+
+@pytest.mark.parametrize("name", ["mcp", "MCP"])
+def test_new_mcp_project_name_collision(name: str, tmp_path: Path) -> None:
+    """The CLI rejects a self-dependent MCP project during the dry run."""
+    target = tmp_path / name
+    result = runner.invoke(app, ["new", "mcp", str(target), "--dry-run"])
+    assert result.exit_code == 1
+    assert "MCP SDK" in result.output
+    assert not target.exists()

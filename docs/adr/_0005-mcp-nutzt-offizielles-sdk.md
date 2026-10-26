@@ -1,6 +1,6 @@
 # 0005 – MCP nutzt das offizielle SDK über stdio
 
-- Status: accepted
+- Status: superseded by ADR-0006
 - Datum: 2026-10-26
 
 ## Kontext
@@ -38,3 +38,10 @@ Starters.
   ein vom offiziellen SDK abweichender Pfad.
 - **Streamable HTTP als Standard:** mehr Betriebsaufwand und Auth-Fragen, die
   der Starter nicht beantworten soll.
+
+## Revision
+
+[ADR-0006](0006-mcp-inspector-startet-projekt-entrypoint.md) ersetzt den
+Inspector-Start über `mcp run` durch den Projekt-Entrypoint und entfernt das
+zusätzliche `mcp[cli]`-Entwicklungsextra. Die Entscheidung für das offizielle
+SDK über stdio bleibt bestehen.

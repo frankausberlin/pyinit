@@ -15,7 +15,7 @@ from pyinit.errors import ApplyError, CommandFailedError, MissingToolError
 from pyinit.models import Plan
 from pyinit.plan import build_plan, validate_target
 from pyinit.render import render_files
-from pyinit.resolver import Resolution, resolve
+from pyinit.resolver import Resolution, resolve, validate_project_dependencies
 from pyinit.runner import CommandResult, Runner, SubprocessRunner, clean_environment
 
 Which = Callable[[str], str | None]
@@ -184,6 +184,7 @@ def generate(
         clock=clock if clock is not None else SystemClock(),
     )
     resolution: Resolution = resolve(profile, catalog)
+    validate_project_dependencies(context.project_name, resolution)
     files = render_files(resolution, context)
     pyproject = next((item for item in files if item.target == "pyproject.toml"), None)
     if pyproject is None:

@@ -4,7 +4,6 @@ modes = ["app"]
 conflicts = ["cli", "app-main"]
 provides = ["entrypoint.mcp"]
 runtime_dependencies = ["mcp>=2.3.0,<3"]
-dev_dependencies = ["mcp[cli]>=2.3.0,<3"]
 files = [
   { source = "templates/server.py.j2", target = "src/{{ package_name }}/server.py" },
   { source = "templates/main.py.j2", target = "src/{{ package_name }}/main.py" },

@@ -36,7 +36,9 @@ just mcp-dev     # open the pinned MCP Inspector on loopback (requires Node.js a
 ```
 
 `just mcp-dev` is a development helper; `just check` does not require Node.js.
-The smoke tests call the server through the in-memory `Client` from the SDK.
+It starts the installed project entrypoint, so relative imports inside the
+package keep working. The smoke tests call the server through the in-memory
+`Client` from the SDK.
 
 {% endif %}{% if has_docs %}## Documentation
 
