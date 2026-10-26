@@ -47,6 +47,17 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Tests für den Generator gehören in `tests/`; erzeugte Projekte werden über
   `just test-generated` geprüft.
 
+## Dokumentation
+
+- `docs/artefakte.md` ist handgepflegt und beschreibt jedes Artefakt und jedes
+  Profil. Änderungen an `src/pyinit/data/artifacts/**` oder
+  `src/pyinit/data/profiles/**` erfordern eine Anpassung dieser Seite im selben
+  Commit. `pyinit describe <id>` zeigt dieselben Daten zur Laufzeit.
+- Ein Bump der Skill-Version erfordert manuell `lupysta_version` in
+  `src/pyinit/data/artifacts/agent-docs/templates/AGENTS.md.j2` und
+  `CONTRACT_VERSION` in `src/pyinit/models.py` nachzuziehen. Es gibt bewusst
+  keinen Automatismus und keinen CI-Check dafür.
+
 ## ADRs
 
 Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit

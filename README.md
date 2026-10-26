@@ -60,6 +60,10 @@ just docs         # regenerate docs/reference/cli.md
 just docs-check   # verify the generated CLI reference is current
 ```
 
+The hand-maintained overview of every artifact and profile is
+[docs/artefakte.md](docs/artefakte.md). It mirrors the bundled TOML data; run
+`pyinit describe <id>` to see the same facts at runtime.
+
 ## Release
 
 ```bash
