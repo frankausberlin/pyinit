@@ -54,6 +54,10 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     assert "src/demo/__init__.py" in targets
     assert "tests/test_smoke.py" in targets
     assert len(targets) == len(files)
+    for item in files:
+        if item.target.endswith(".py"):
+            assert item.content.endswith("\n")
+            assert not item.content.endswith("\n\n")
     justfile = next(item for item in files if item.target == "Justfile")
     assert 'merge branch=""' in justfile.content
     assert 'bash scripts/merge.sh "{{branch}}" "{{target}}"' in justfile.content
@@ -185,6 +189,10 @@ def test_external_mcp_server_without_entrypoint_has_no_mcp_start_path(
     profile = catalog.profile("external")
     files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
     by_target = {item.target: item.content for item in files}
+    for item in files:
+        if item.target.endswith(".py"):
+            assert item.content.endswith("\n")
+            assert not item.content.endswith("\n\n")
     assert "TextResourceContents\n\nfrom demo.server import mcp" in by_target["tests/test_mcp.py"]
     assert "mcp-dev" not in recipe_names(by_target["Justfile"])
     assert "just mcp-dev" not in by_target["README.md"]

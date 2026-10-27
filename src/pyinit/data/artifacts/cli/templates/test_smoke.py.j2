@@ -37,4 +37,4 @@ def test_hello_does_not_start_server(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result.exit_code == 0
     assert "Hello, tester!" in result.output
     assert calls == []
-{% endif %}
+{% endif -%}
