@@ -53,10 +53,15 @@ Verwende für die Entwicklung immer den lupysta-Skill.
   Profil. Änderungen an `src/pyinit/data/artifacts/**` oder
   `src/pyinit/data/profiles/**` erfordern eine Anpassung dieser Seite im selben
   Commit. `pyinit describe <id>` zeigt dieselben Daten zur Laufzeit.
-- Ein Bump der Skill-Version erfordert manuell `lupysta_version` in
-  `src/pyinit/data/artifacts/agent-docs/templates/AGENTS.md.j2` und
-  `CONTRACT_VERSION` in `src/pyinit/models.py` nachzuziehen. Es gibt bewusst
-  keinen Automatismus und keinen CI-Check dafür.
+- Die Herkunftswerte stehen in `src/pyinit/models.py`: `LUPYSTA_VERSION` und
+  `CONTRACT_VERSION`. Templates lesen sie über den Kontext
+  (`{{ lupysta_version }}`, `{{ contract_version }}`); Literale in Templates
+  sind ein Fehler.
+- Ein Bump von `LUPYSTA_VERSION` wird mit dem Feld `version:` in
+  `ludesta/Luxus-Python-Stack/lupysta/SKILL.md` abgeglichen. Einen
+  automatischen Abgleich über die Repo-Grenze gibt es bewusst nicht
+  (Begründung: `docs/adr/0008-lupysta-version-als-konstante.md`); die Tests
+  sichern nur die Repo-interne Einmaligkeit.
 
 ## ADRs
 
@@ -79,12 +84,12 @@ Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit
 <!--
 Format eines Eintrags:
 
-### AP-1: Kurztitel
+    ### AP-1: Kurztitel
 
-- **Situation**: ...
-- **Handhabung**: ...
-- **Involvierte ADRs**: ...
-- **Kontext**: ...
+    - **Situation**: ...
+    - **Handhabung**: ...
+    - **Involvierte ADRs**: ...
+    - **Kontext**: ...
 
 Entfernte APs bleiben als `### AP-N: entfernt (YYYY-MM-DD)` stehen; ihre
 Nummer wird nicht neu vergeben.
@@ -116,6 +121,26 @@ Nummer wird nicht neu vergeben.
 - **Involvierte ADRs**: ADR-0007.
 - **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` als
   `mcp-project` an; die übrigen Profile behalten ihren Profilnamen.
+
+### AP-3: Herkunft erzeugter Projekte ist nicht selbstaktualisierend
+
+- **Situation**: `pyinit` legt nur neue Projekte an und aktualisiert keine
+  bestehenden. `AGENTS.md` (Herkunft) und `pyinit.toml` eines Projekts nennen
+  deshalb die Skill- und Contract-Version zum Zeitpunkt der Erzeugung. Diese
+  Datei hier ist selbst so ein Fall: sie nennt `lupysta_version: 0.11.0`, der
+  installierte Skill ist älter oder neuer – je nachdem, wann zuletzt erzeugt
+  wurde.
+- **Handhabung**: Vor Arbeiten an einem generierten Projekt die Herkunft lesen
+  und mit `version:` in `ludesta/Luxus-Python-Stack/lupysta/SKILL.md`
+  vergleichen. Bei Abweichung die Differenz melden und die betroffenen Dateien
+  bewusst abgleichen; `AGENTS.md` und `pyinit.toml` nicht stillschweigend
+  umschreiben, als wäre das Projekt neu erzeugt worden. Einen echten
+  Upgrade-Pfad (`pyinit doctor`/`diff`) gibt es noch nicht – nicht ungefragt
+  nachbauen, sondern als Aufgabe anlegen.
+- **Involvierte ADRs**: ADR-0004, ADR-0008.
+- **Kontext**: Ein Bump von `LUPYSTA_VERSION` wirkt nur auf neu erzeugte
+  Projekte. Bereits erzeugte Projekte bleiben auf ihrem Stand, bis sie
+  manuell nachgezogen werden.
 
 ## Herkunft
 

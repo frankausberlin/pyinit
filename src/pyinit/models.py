@@ -10,6 +10,11 @@ from pyinit import __version__
 SCHEMA_VERSION = 1
 PYINIT_VERSION = __version__
 CONTRACT_VERSION = 4
+# Version of the lupysta skill that generated projects are documented against.
+# This is the single source of truth for the value written to AGENTS.md; it must
+# be bumped together with the `version:` frontmatter field in
+# ludesta/Luxus-Python-Stack/lupysta/SKILL.md.
+LUPYSTA_VERSION = "0.12.0"
 MINIMUM_PYTHON = (3, 11)
 
 
@@ -65,6 +70,7 @@ class Context:
     generated_at: str
     pyinit_version: str = PYINIT_VERSION
     contract_version: int = CONTRACT_VERSION
+    lupysta_version: str = LUPYSTA_VERSION
 
     def as_mapping(self) -> dict[str, object]:
         """Return the template variables as a plain mapping."""
@@ -80,6 +86,7 @@ class Context:
             "generated_at": self.generated_at,
             "pyinit_version": self.pyinit_version,
             "contract_version": self.contract_version,
+            "lupysta_version": self.lupysta_version,
         }
 
 

@@ -14,7 +14,7 @@ import pyinit.render as render_module
 from pyinit.context import FixedClock, build_context
 from pyinit.discovery import Catalog, load_catalog
 from pyinit.errors import DuplicateRecipeError, DuplicateTargetError, PathTraversalError, RenderError
-from pyinit.models import Artifact, Context, FileSpec, Profile
+from pyinit.models import CONTRACT_VERSION, LUPYSTA_VERSION, Artifact, Context, FileSpec, Profile
 from pyinit.render import (
     artifact_source_exists,
     build_environment,
@@ -56,7 +56,10 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     assert len(targets) == len(files)
     justfile = next(item for item in files if item.target == "Justfile")
     assert 'merge branch=""' in justfile.content
-    assert "{{branch}}" in justfile.content
+    assert 'bash scripts/merge.sh "{{branch}}" "{{target}}"' in justfile.content
+    merge_script = next(item for item in files if item.target == "scripts/merge.sh")
+    assert merge_script.executable
+    assert merge_script.content.startswith("#!/usr/bin/env bash\n")
     pyproject = next(item for item in files if item.target == "pyproject.toml")
     if profile_id == "lib":
         assert "[project.scripts]" not in pyproject.content
@@ -120,6 +123,17 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
         "vulture>=2.16",
     ]
     assert data["project"]["scripts"] == {"demo": "demo.main:main"}
+
+
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
+def test_provenance_records_the_bundled_skill_version(profile_id: str, tmp_path: Path) -> None:
+    """The herkunft section renders the single-source version, not a literal."""
+    catalog = load_catalog()
+    profile = catalog.profile(profile_id)
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    agents = next(item.content for item in files if item.target == "AGENTS.md")
+    assert f"- lupysta_version: `{LUPYSTA_VERSION}`" in agents
+    assert f"- contract_version: `{CONTRACT_VERSION}`" in agents
 
 
 def test_profile_without_entrypoint_omits_scripts_and_run(tmp_path: Path) -> None:

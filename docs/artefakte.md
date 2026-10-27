@@ -34,7 +34,7 @@ nicht im Profil genannt, sondern aus dem Modus injiziert: `app` → `base-app`,
 
 Alle Templates sehen: `project_name`, `package_name`, `python_version`,
 `author_name`, `year`, `mode`, `profile`, `artifacts`, `generated_at`,
-`pyinit_version`, `contract_version`. Zusätzlich stehen
+`pyinit_version`, `contract_version`, `lupysta_version`. Zusätzlich stehen
 `runtime_dependencies`, `dev_dependencies`, `e2e_dependencies`, `has_docs`,
 `has_entrypoint` und `capabilities` bereit.
 
@@ -74,6 +74,7 @@ Basis für jede Anwendung; wird bei Modus `app` automatisch injiziert.
 | `files/settings.json` | `.vscode/settings.json` |
 | `files/launch.json` | `.vscode/launch.json` |
 | `files/extensions.json` | `.vscode/extensions.json` |
+| `files/merge.sh` | `scripts/merge.sh` (executable) |
 
 **Rezepte:** `test`, `lint`, `typecheck`, `fix`, `clean`, `audit`, `bump`,
 `check`, `run` (nur mit Entrypoint), `merge`.
@@ -109,7 +110,10 @@ Basis für jede Anwendung; wird bei Modus `app` automatisch injiziert.
 - VS Code deaktiviert Pylance zugunsten von basedpyright, formatiert mit Ruff und
   aktiviert pytest.
 - `bump` verlangt einen sauberen Arbeitsbaum; `merge` ist ein
-  Fast-Forward-Helfer ohne Push.
+  Fast-Forward-Helfer ohne Push. Die Logik liegt vollständig in
+  `scripts/merge.sh`; das Rezept reicht nur `branch` und `target` weiter.
+  Die Fälle (sauber vs. schmutzig, Divergenz, Worktree, Auto-Erkennung) sind in
+  `tests/test_merge_script.py` abgedeckt.
 - Die Lizenz ist MIT mit Autor aus `git config user.name` (Fallback
   `Project Author`) und dem aktuellen Jahr.
 
@@ -172,8 +176,13 @@ Dokumente für die agentische Arbeit; bietet `agents.docs`.
 
 - `AGENTS.md` ist die Projektquelle: Projektprofil, Testing-Abschnitt,
   optional MCP-Hinweise, optional ADR-Konventionen (bei `adr`), optional
-  Attention-Point-Gerüst (bei `ap`) und Herkunft mit `lupysta_version: 0.11.0`
+  Attention-Point-Gerüst (bei `ap`) und Herkunft mit `lupysta_version`
   sowie `contract_version`.
+- `lupysta_version` stammt aus `LUPYSTA_VERSION` in `src/pyinit/models.py`; der
+  Wert steht nur dort und wird über den Template-Kontext gerendert. Er wird
+  zusammen mit dem Feld `version:` in
+  `ludesta/Luxus-Python-Stack/lupysta/SKILL.md` gepflegt
+  (siehe [`../docs/adr/0008-lupysta-version-als-konstante.md`](../docs/adr/0008-lupysta-version-als-konstante.md)).
 - `journal/README.md` legt die Chronik-Konvention fest: ein unveränderlicher
   Eintrag pro Sitzung, Dateiname `YYYY-MM-DD-HHMM-<slug>.md` in UTC, kein
   Frontmatter.

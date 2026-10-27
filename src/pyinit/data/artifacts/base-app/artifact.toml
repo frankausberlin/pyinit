@@ -18,6 +18,7 @@ files = [
   { source = "files/settings.json", target = ".vscode/settings.json", render = false },
   { source = "files/launch.json", target = ".vscode/launch.json", render = false },
   { source = "files/extensions.json", target = ".vscode/extensions.json", render = false },
+  { source = "files/merge.sh", target = "scripts/merge.sh", render = false, executable = true },
 ]
 dev_dependencies = [
   "basedpyright>=1.40.2",
