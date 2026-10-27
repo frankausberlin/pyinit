@@ -16,7 +16,7 @@ FAKEBIN = Path(__file__).resolve().parent / "fakebin"
 @pytest.mark.parametrize("profile", ["app", "app-cli", "lib", "mcp"])
 def test_dry_run_writes_nothing(profile: str, tmp_path: Path) -> None:
     """Every bundled profile produces a plan without touching the filesystem."""
-    target = tmp_path / profile
+    target = tmp_path / ("mcp-project" if profile == "mcp" else profile)
     plan = generate(profile, target, dry_run=True, author_name="E2E Author")
     assert plan.profile == profile
     assert not target.exists()
