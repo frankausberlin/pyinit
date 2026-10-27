@@ -39,7 +39,7 @@ def context_for(profile: Profile, target: Path) -> Context:
     )
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
 def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     """Test."""
     catalog = load_catalog()
@@ -69,7 +69,7 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
         assert "run" in recipe_names(justfile.content)
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp"])
 def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Path) -> None:
     """A dotted project name stays a single command key in TOML."""
     catalog = load_catalog()
@@ -81,7 +81,7 @@ def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Pa
     assert scripts == {"my.project": "my_project.main:main"}
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp"])
 def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: Path) -> None:
     """Names without a dot produce the same command key as before."""
     catalog = load_catalog()
@@ -102,7 +102,9 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
     assert 'mcp = MCPServer("demo")' in by_target["src/demo/server.py"]
     assert "mcp.run()" in by_target["src/demo/main.py"]
     assert "from demo.server import mcp" in by_target["src/demo/main.py"]
-    assert "Client(mcp, raise_exceptions=True)" in by_target["tests/test_smoke.py"]
+    assert "Client(mcp, raise_exceptions=True)" in by_target["tests/test_mcp.py"]
+    assert "def test_entry_point_starts_server" not in by_target["tests/test_mcp.py"]
+    assert "main_module.main()" in by_target["tests/test_smoke.py"]
     assert "mcp-dev" in recipe_names(by_target["Justfile"])
     assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0 uv run demo" in by_target["Justfile"]
     assert "mcp run src/demo/server.py" not in by_target["Justfile"]
@@ -125,7 +127,73 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
     assert data["project"]["scripts"] == {"demo": "demo.main:main"}
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
+def test_app_cli_smoke_keeps_typer_single_command_form(tmp_path: Path) -> None:
+    """The CLI-only profile keeps Typer's implicit single-command arguments."""
+    catalog = load_catalog()
+    profile = catalog.profile("app-cli")
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    smoke = next(item.content for item in files if item.target == "tests/test_smoke.py")
+    assert 'runner.invoke(app, ["--name", "tester"])' in smoke
+    assert 'runner.invoke(app, ["hello", "--name", "tester"])' not in smoke
+
+
+def test_cli_mcp_profile_shares_one_entrypoint_and_render_targets(tmp_path: Path) -> None:
+    """The combined profile renders one entry point, one CLI, and one server."""
+    catalog = load_catalog()
+    profile = catalog.profile("cli-mcp")
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "lion"))
+    targets = [item.target for item in files]
+    by_target = {item.target: item.content for item in files}
+    assert targets.count("src/lion/main.py") == 1
+    assert targets.count("tests/test_smoke.py") == 1
+    assert targets.count("tests/test_mcp.py") == 1
+    assert "from lion import server" in by_target["src/lion/cli.py"]
+    assert '@app.command(name="mcp")' in by_target["src/lion/cli.py"]
+    assert "server.mcp.run()" in by_target["src/lion/cli.py"]
+    assert "    from lion import server" in by_target["src/lion/cli.py"]
+    assert 'runner.invoke(app, ["mcp"])' in by_target["tests/test_mcp.py"]
+    assert 'runner.invoke(app, ["hello", "--name", "tester"])' in by_target["tests/test_smoke.py"]
+    assert "calls == []" in by_target["tests/test_smoke.py"]
+    assert "App (CLI mit MCP-Server)" in by_target["AGENTS.md"]
+    assert "just run         # run the hello command" in by_target["README.md"]
+    assert "uv run lion mcp" in by_target["Justfile"]
+    assert "uv run lion hello" in by_target["Justfile"]
+    data = tomllib.loads(by_target["pyproject.toml"])
+    assert data["project"]["dependencies"] == ["typer>=0.27.3", "mcp>=2.3.0,<3"]
+    assert data["project"]["scripts"] == {"lion": "lion.main:main"}
+
+
+@pytest.mark.parametrize(
+    "artifacts",
+    [
+        ["agent-docs", "mcp-server"],
+        ["agent-docs", "app-main", "mcp-server"],
+    ],
+)
+def test_external_mcp_server_without_entrypoint_has_no_mcp_start_path(
+    artifacts: list[str],
+    tmp_path: Path,
+) -> None:
+    """A module-only MCP artifact renders clean tests and honest documentation."""
+    profile_file = tmp_path / "external.toml"
+    rendered_artifacts = ", ".join(f'"{item}"' for item in artifacts)
+    profile_file.write_text(
+        f'id = "external"\nmode = "app"\nartifacts = [{rendered_artifacts}]\n',
+        encoding="utf-8",
+    )
+    catalog = load_catalog(profile_file)
+    profile = catalog.profile("external")
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    by_target = {item.target: item.content for item in files}
+    assert "TextResourceContents\n\nfrom demo.server import mcp" in by_target["tests/test_mcp.py"]
+    assert "mcp-dev" not in recipe_names(by_target["Justfile"])
+    assert "just mcp-dev" not in by_target["README.md"]
+    assert "provides no `mcp-dev` recipe" in by_target["README.md"]
+    assert "tests/test_smoke.py prüft den stdio-Entrypoint" not in by_target["AGENTS.md"]
+    assert "MCP-Entrypoint" in by_target["AGENTS.md"]
+
+
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
 def test_provenance_records_the_bundled_skill_version(profile_id: str, tmp_path: Path) -> None:
     """The herkunft section renders the single-source version, not a literal."""
     catalog = load_catalog()

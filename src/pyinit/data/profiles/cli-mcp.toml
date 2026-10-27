@@ -1,0 +1,4 @@
+id = "cli-mcp"
+description = "Application with a Typer CLI and an MCP server subcommand"
+mode = "app"
+artifacts = ["agent-docs", "adr", "ap", "cli", "mcp-server", "e2e", "agent", "refactor"]

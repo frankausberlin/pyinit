@@ -27,6 +27,7 @@ def test_list_profiles() -> None:
     result = runner.invoke(app, ["list"])
     assert result.exit_code == 0
     assert "app-cli" in result.output
+    assert "cli-mcp" in result.output
     assert "mcp" in result.output
     assert "[lib]" in result.output
 
@@ -39,15 +40,23 @@ def test_describe_profile_and_artifact() -> None:
     mcp_profile = runner.invoke(app, ["describe", "mcp"])
     assert mcp_profile.exit_code == 0
     assert "Artifacts: agent-docs, adr, ap, mcp, e2e, agent, refactor" in mcp_profile.output
+    cli_mcp_profile = runner.invoke(app, ["describe", "cli-mcp"])
+    assert cli_mcp_profile.exit_code == 0
+    assert "Artifacts: agent-docs, adr, ap, cli, mcp-server, e2e, agent, refactor" in cli_mcp_profile.output
     artifact = runner.invoke(app, ["describe", "cli"])
     assert artifact.exit_code == 0
     assert "Provides: entrypoint.cli, docs.cli" in artifact.output
     assert "Justfile fragments:" in artifact.output
     mcp_artifact = runner.invoke(app, ["describe", "mcp"])
     assert mcp_artifact.exit_code == 0
+    assert "Requires: mcp-server" in mcp_artifact.output
     assert "Provides: entrypoint.mcp" in mcp_artifact.output
-    assert "Runtime dependencies: mcp>=2.3.0,<3" in mcp_artifact.output
+    assert "Runtime dependencies:" not in mcp_artifact.output
     assert "Development dependencies:" not in mcp_artifact.output
+    mcp_server = runner.invoke(app, ["describe", "mcp-server"])
+    assert mcp_server.exit_code == 0
+    assert "Provides: mcp.server" in mcp_server.output
+    assert "Runtime dependencies: mcp>=2.3.0,<3" in mcp_server.output
 
 
 def test_describe_unknown() -> None:

@@ -189,7 +189,7 @@ def test_merges_from_linked_worktree_and_removes_it(tmp_path: Path) -> None:
     assert "worktree removed and branch deleted" in result.stdout
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "lib", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
 def test_script_is_part_of_every_profile(profile_id: str) -> None:
     """Every generated project ships the script it calls from the Justfile."""
     assert MERGE_SCRIPT.is_file()

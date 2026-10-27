@@ -108,16 +108,17 @@ Nummer wird nicht neu vergeben.
 
 ### AP-2: MCP-Projekt nicht `mcp` nennen
 
-- **Situation**: Das Profil `mcp` hängt von der PyPI-Distribution `mcp` ab.
-  Heißt das erzeugte Projekt selbst `mcp`, versucht `uv lock`, das Projekt als
-  Abhängigkeit seiner selbst aufzulösen, und bricht mit einer
-  unsatisfiable-Resolution ab.
+- **Situation**: Die Profile `mcp` und `cli-mcp` hängen über `mcp-server` von
+  der PyPI-Distribution `mcp` ab. Heißt das erzeugte Projekt selbst `mcp`,
+  versucht `uv lock`, das Projekt als Abhängigkeit seiner selbst aufzulösen,
+  und bricht mit einer unsatisfiable-Resolution ab.
 - **Handhabung**: `pyinit` lehnt den normalisierten Projektnamen `mcp` im
   Preflight ab, sobald das aufgelöste Artefaktset die MCP-Abhängigkeit enthält;
-  das gilt auch für `--dry-run` und externe Profile. Für Profil-Checks und
-  Nutzerbeispiele ist ein abweichender Name nötig, etwa `mcp-project` oder ein
-  fachlicher Name wie `arithmetic-mcp`. Der Profilname bleibt `mcp`, nur der
-  Projektname muss abweichen.
+  das gilt auch für `--dry-run` und externe Profile sowie für die Profile `mcp`
+  und `cli-mcp`. Für Profil-Checks und Nutzerbeispiele ist ein abweichender
+  Name nötig, etwa `mcp-project` oder ein fachlicher Name wie
+  `arithmetic-mcp`. Der Profilname bleibt `mcp`, nur der Projektname muss
+  abweichen.
 - **Involvierte ADRs**: ADR-0007.
 - **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` als
   `mcp-project` an; die übrigen Profile behalten ihren Profilnamen.

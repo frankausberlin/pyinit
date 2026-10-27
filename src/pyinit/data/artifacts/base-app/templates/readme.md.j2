@@ -28,9 +28,19 @@ just test-agent  # provider suite manually (hint + exit 0 until tests exist)
 gate: run it locally with `just test-e2e`; CI runs it automatically once test
 files exist. Agent tests are manual-only and never run in CI.
 
-{% if "mcp" in artifacts %}## MCP Server
+{% if "mcp.server" in capabilities %}## MCP Server
 
-```bash
+{% if "entrypoint.cli" in capabilities %}```bash
+just run         # run the hello command
+just mcp-dev     # open the pinned MCP Inspector and run `{{ project_name }} mcp` (requires Node.js and npx)
+```
+
+`just mcp-dev` is a development helper; `just check` does not require Node.js.
+It starts the installed project entrypoint, so relative imports inside the
+package keep working. The `mcp` subcommand runs the server without writing to
+stdout before startup. The smoke tests call the server through the in-memory
+`Client` from the SDK.
+{% elif "entrypoint.mcp" in capabilities %}```bash
 just run         # start the MCP server over stdio
 just mcp-dev     # open the pinned MCP Inspector on loopback (requires Node.js and npx)
 ```
@@ -39,6 +49,10 @@ just mcp-dev     # open the pinned MCP Inspector on loopback (requires Node.js a
 It starts the installed project entrypoint, so relative imports inside the
 package keep working. The smoke tests call the server through the in-memory
 `Client` from the SDK.
+{% else %}This profile does not expose the MCP server as an entrypoint and
+provides no `mcp-dev` recipe; `tests/test_mcp.py` exercises the tool and
+resource through the in-memory `Client` from the SDK.
+{% endif %}
 
 {% endif %}{% if has_docs %}## Documentation
 

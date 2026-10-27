@@ -13,7 +13,15 @@ app = typer.Typer(
 def hello(name: str = "world") -> None:
     """Print a greeting."""
     typer.echo(f"Hello, {name}!")
+{% if "mcp.server" in capabilities %}
 
+@app.command(name="mcp")
+def mcp_command() -> None:
+    """Run the MCP server over stdio."""
+    from {{ package_name }} import server
+
+    server.mcp.run()
+{% endif %}
 
 if __name__ == "__main__":
     app()

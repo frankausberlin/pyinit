@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+import pytest
 
 from pyinit.apply import generate
 from pyinit.context import FixedClock
@@ -13,8 +16,8 @@ from pyinit.context import FixedClock
 CLOCK = FixedClock(datetime(2026, 10, 26, 20, 0, tzinfo=UTC))
 
 
-def _write_plan(target: Path) -> None:
-    plan = generate("mcp", target, dry_run=True, clock=CLOCK, author_name="Tester")
+def _write_plan(profile_id: str, target: Path) -> None:
+    plan = generate(profile_id, target, dry_run=True, clock=CLOCK, author_name="Tester")
     for item in plan.files:
         path = target / item.target
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -32,15 +35,16 @@ def _write_fake_toolchain(directory: Path) -> None:
     npx.write_text('#!/bin/sh\nshift\nexec "$@"\n', encoding="utf-8")
     uv = directory / "uv"
     uv.write_text(
-        "#!/usr/bin/env python3\n"
+        f"#!{sys.executable}\n"
         "import sys\n"
         "import tomllib\n"
         "\n"
         'if len(sys.argv) < 3 or sys.argv[1] != "run":\n'
         '    raise SystemExit(f"unexpected uv invocation: {sys.argv[1:]}")\n'
+        "sys.argv = sys.argv[2:]\n"
         'with open("pyproject.toml", "rb") as handle:\n'
         "    data = tomllib.load(handle)\n"
-        'module_name, attribute = data["project"]["scripts"][sys.argv[2]].split(":")\n'
+        'module_name, attribute = data["project"]["scripts"][sys.argv[0]].split(":")\n'
         "module = __import__(module_name, fromlist=[attribute])\n"
         "getattr(module, attribute)()\n",
         encoding="utf-8",
@@ -76,10 +80,21 @@ def _write_stub_sdk(directory: Path) -> None:
     )
 
 
-def test_mcp_dev_starts_entrypoint_with_relative_import(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("profile_id", "expected_run"),
+    [
+        ("mcp", "uv run demo"),
+        ("cli-mcp", "uv run demo mcp"),
+    ],
+)
+def test_mcp_dev_starts_entrypoint_with_relative_import(
+    profile_id: str,
+    expected_run: str,
+    tmp_path: Path,
+) -> None:
     """The Inspector recipe imports the package so relative imports work."""
     target = tmp_path / "demo"
-    _write_plan(target)
+    _write_plan(profile_id, target)
     (target / "src" / "demo" / "tools.py").write_text(
         'def add(a: int, b: int) -> int:\n    """Add two numbers."""\n    return a + b\n',
         encoding="utf-8",
@@ -109,7 +124,7 @@ def test_mcp_dev_starts_entrypoint_with_relative_import(tmp_path: Path) -> None:
     _write_stub_sdk(stub_root)
 
     command = _mcp_dev_command(target)
-    assert command.startswith("HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0 uv run ")
+    assert command == f"HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0 {expected_run}"
     environment = {
         **os.environ,
         "PATH": f"{fakebin}{os.pathsep}{os.environ.get('PATH', '')}",

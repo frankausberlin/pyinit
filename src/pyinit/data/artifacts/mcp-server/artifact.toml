@@ -1,0 +1,10 @@
+id = "mcp-server"
+description = "MCP server module with a tool, a resource, SDK smoke tests, and Inspector recipe"
+modes = ["app"]
+provides = ["mcp.server"]
+runtime_dependencies = ["mcp>=2.3.0,<3"]
+files = [
+  { source = "templates/server.py.j2", target = "src/{{ package_name }}/server.py" },
+  { source = "templates/test_mcp.py.j2", target = "tests/test_mcp.py" },
+]
+just_fragments = ["templates/justfile.j2"]

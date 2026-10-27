@@ -13,7 +13,7 @@ from pyinit.errors import TargetError
 FAKEBIN = Path(__file__).resolve().parent / "fakebin"
 
 
-@pytest.mark.parametrize("profile", ["app", "app-cli", "lib", "mcp"])
+@pytest.mark.parametrize("profile", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
 def test_dry_run_writes_nothing(profile: str, tmp_path: Path) -> None:
     """Every bundled profile produces a plan without touching the filesystem."""
     target = tmp_path / ("mcp-project" if profile == "mcp" else profile)
@@ -57,6 +57,25 @@ def test_apply_mcp_with_fake_toolchain(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert "mcp-dev" in justfile
     assert "HOST=127.0.0.1 npx @modelcontextprotocol/inspector@2.12.0" in justfile
     assert "uv run demo" in justfile
+    assert not list(tmp_path.glob(".demo.pyinit-*"))
+
+
+def test_apply_cli_mcp_with_fake_toolchain(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Apply the combined CLI/MCP profile with one entry point and both tests."""
+    monkeypatch.setenv("PATH", f"{FAKEBIN}{os.pathsep}{os.environ.get('PATH', '')}")
+    target = tmp_path / "demo"
+    plan = generate("cli-mcp", target, no_check=True, author_name="E2E Author")
+    assert plan.target == target
+    assert (target / "src" / "demo" / "main.py").is_file()
+    assert (target / "src" / "demo" / "cli.py").is_file()
+    assert (target / "src" / "demo" / "server.py").is_file()
+    assert (target / "tests" / "test_smoke.py").is_file()
+    assert (target / "tests" / "test_mcp.py").is_file()
+    pyproject = (target / "pyproject.toml").read_text(encoding="utf-8")
+    assert pyproject.count("[project.scripts]") == 1
+    assert '"demo" = "demo.main:main"' in pyproject
+    justfile = (target / "Justfile").read_text(encoding="utf-8")
+    assert "uv run demo mcp" in justfile
     assert not list(tmp_path.glob(".demo.pyinit-*"))
 
 

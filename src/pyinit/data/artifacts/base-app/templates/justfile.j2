@@ -60,8 +60,9 @@ check:
 {% if has_entrypoint %}
 # Run the installed command
 run:
-    uv run {{ project_name }}
-{% endif %}
+{% if "entrypoint.cli" in capabilities and "mcp.server" in capabilities %}    uv run {{ project_name }} hello
+{% else %}    uv run {{ project_name }}
+{% endif %}{% endif %}
 {% raw %}
 # Fast-forward target to <branch> (auto-detected when omitted) and clean up safely.
 merge branch="" target="main":

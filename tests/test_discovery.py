@@ -11,11 +11,12 @@ from pyinit.errors import ArtifactNotFoundError, InvalidDataError, ProfileNotFou
 def test_bundled_catalog_contains_expected_data() -> None:
     """Test."""
     catalog = load_catalog()
-    assert {"app", "app-cli", "lib", "mcp"} <= set(catalog.profiles)
-    assert {"base-app", "base-lib", "cli", "diataxis", "e2e", "agent", "mcp"} <= set(catalog.artifacts)
+    assert {"app", "app-cli", "cli-mcp", "lib", "mcp"} <= set(catalog.profiles)
+    assert {"base-app", "base-lib", "cli", "diataxis", "e2e", "agent", "mcp", "mcp-server"} <= set(catalog.artifacts)
     assert catalog.profiles["app"].mode == "app"
     assert catalog.profiles["lib"].mode == "lib"
     assert catalog.profiles["mcp"].mode == "app"
+    assert catalog.profiles["cli-mcp"].mode == "app"
 
 
 def test_unknown_profile_and_artifact() -> None:

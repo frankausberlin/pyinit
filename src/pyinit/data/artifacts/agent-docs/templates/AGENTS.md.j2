@@ -10,7 +10,7 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 
 - Projektname: `{{ project_name }}`
 - Paketname: `{{ package_name }}`
-- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "cli" in artifacts %}App (CLI){% elif "mcp" in artifacts %}App (MCP-Server){% else %}App{% endif %}
+- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "entrypoint.cli" in capabilities and "mcp.server" in capabilities %}App (CLI mit MCP-Server){% elif "entrypoint.cli" in capabilities %}App (CLI){% elif "mcp.server" in capabilities %}App (MCP-Server){% else %}App{% endif %}
 - Python-Version: `{{ python_version }}`
 - Quellpfad: `src/{{ package_name }}/`
 - Testpfad: `tests/`
@@ -31,14 +31,25 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Das Verzeichnis-Gate steht in `tests/conftest.py`; die Suite-Guards brechen
   ab, bevor Testmodule importiert werden, wenn eine Suite ohne Opt-in
   gesammelt wird.
-{% if "mcp" in artifacts %}- `just run` startet den MCP-Server über stdio. `just mcp-dev` öffnet den
+{% if "mcp.server" in capabilities %}{% if "entrypoint.cli" in capabilities %}- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
+  SDK sowie die CLI-Weiterleitung an den Server. `tests/test_smoke.py` prüft die
+  CLI und stellt sicher, dass `hello` den Server nicht startet.
+- `just run` führt den Befehl `hello` aus. `just mcp-dev` öffnet den gepinnten
+  MCP Inspector auf Loopback über `npx` und startet dort `{{ project_name }} mcp`;
+  dafür braucht es Node.js. Beides ist nicht Teil von `just check`. Der
+  Inspector nutzt denselben installierten Projekt-Entrypoint, damit relative
+  Paketimporte funktionieren.
+{% elif "entrypoint.mcp" in capabilities %}- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
+  SDK. `tests/test_smoke.py` prüft den stdio-Entrypoint.
+- `just run` startet den MCP-Server über stdio. `just mcp-dev` öffnet den
   gepinnten MCP Inspector auf Loopback über `npx` und braucht Node.js; beides
   ist nicht Teil von `just check`. Der Inspector startet denselben
   installierten Projekt-Entrypoint wie `just run`, damit relative Paketimporte
   funktionieren.
-- `tests/test_smoke.py` prüft Tool, Resource und Entrypoint über den
-  In-Memory-`Client` des SDK.
-{% endif %}{% if "adr" in artifacts %}
+{% else %}- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
+  SDK. Dieses Profil stellt keinen MCP-Entrypoint bereit und hat kein Rezept
+  `mcp-dev`.
+{% endif %}{% endif %}{% if "adr" in artifacts %}
 ## ADRs
 
 Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit

@@ -14,6 +14,10 @@ nicht im Profil genannt, sondern aus dem Modus injiziert: `app` → `base-app`,
 - **`provides`** vergibt Fähigkeiten. Doppelte Fähigkeiten brechen ab; aus den
   Namensräumen `entrypoint.*` und `docs.*` ist jeweils höchstens eine Fähigkeit
   erlaubt.
+- **Fähigkeiten** stehen Templates als `capabilities` bereit. Templates dürfen
+  davon abhängen (etwa `mcp.server`), damit ein Artefakt in mehreren Profilen
+  unterschiedliche Dateien und Rezepte beiträgt; die Datei- und Rezeptziele
+  bleiben trotzdem eindeutig.
 - **`modes`** beschränkt ein Artefakt auf `app` oder `lib`; ein Profil mit
   fremdem Modus bricht ab.
 - **Dateien** werden genau einmal geschrieben. Zwei Artefakte mit demselben Ziel
@@ -174,10 +178,10 @@ Dokumente für die agentische Arbeit; bietet `agents.docs`.
 
 **Besonderheiten**
 
-- `AGENTS.md` ist die Projektquelle: Projektprofil, Testing-Abschnitt,
-  optional MCP-Hinweise, optional ADR-Konventionen (bei `adr`), optional
-  Attention-Point-Gerüst (bei `ap`) und Herkunft mit `lupysta_version`
-  sowie `contract_version`.
+- `AGENTS.md` ist die Projektquelle: Projektprofil, Testing-Abschnitt mit
+  fähigkeitsabhängigen MCP-Hinweisen (`mcp.server`), optional ADR-Konventionen
+  (bei `adr`), optional Attention-Point-Gerüst (bei `ap`) und Herkunft mit
+  `lupysta_version` sowie `contract_version`.
 - `lupysta_version` stammt aus `LUPYSTA_VERSION` in `src/pyinit/models.py`; der
   Wert steht nur dort und wird über den Template-Kontext gerendert. Er wird
   zusammen mit dem Feld `version:` in
@@ -332,13 +336,26 @@ Typer-CLI mit generierter Referenz; Modus `app`, Konflikt mit `mcp`, bietet
 
 - Die Typer-App heißt wie das Projekt, zeigt ohne Argumente die Hilfe und
   besitzt den Befehl `hello` mit `--name`.
+- Mit der Fähigkeit `mcp.server` (Profil `cli-mcp`) importiert `cli.py` das
+  Servermodul erst im Befehl und registriert zusätzlich den Befehl `mcp`, der
+  `server.mcp.run()` ohne Ausgabe auf stdout startet. Ohne diese Fähigkeit
+  bleibt `app-cli` unverändert.
+- Im kombinierten Profil führt `just run` den Befehl `hello` aus, weil Typer
+  mit zwei Befehlen keinen impliziten Einzelbefehl mehr hat. `app-cli` behält
+  den direkten Einzelbefehl.
 - `main()` delegiert an die Typer-App; der Entrypoint zeigt auf
   `<paket>.main:main`.
 - `scripts/gen_cli_docs.py` erzeugt `docs/reference/cli.md` aus der Typer-App und
   setzt einen „Do not edit“-Kopf. `just docs-check` prüft nur und ist über
   `has_docs` Teil von `just check`.
+- Die Smoke-Tests rufen in `app-cli` weiterhin `--name` direkt auf, weil Typer
+  die App mit nur einem Befehl im Single-Command-Modus startet. Im kombinierten
+  Profil mit zwei Befehlen nutzen sie `hello` als explizites Subkommando. Mit
+  `mcp.server` prüfen sie zusätzlich, dass `hello` den Server nicht startet.
 - Der Konflikt mit `mcp` folgt aus dem einen `entrypoint.*`-Slot und den
-  gemeinsamen Zieldateien `main.py` und `tests/test_smoke.py`.
+  gemeinsamen Zieldateien `main.py` und `tests/test_smoke.py`. Das kombinierte
+  Profil `cli-mcp` nutzt stattdessen `mcp-server` und teilt sich den Entrypoint
+  mit der CLI.
 
 ### `diataxis`
 
@@ -371,38 +388,66 @@ MkDocs-Dokumentation für Bibliotheken; Modus `lib`, bietet `docs.mkdocs`.
 - Bibliotheken erhalten keine CLI-Referenz; Apps mit `cli` erhalten kein
   MkDocs-Gerüst.
 
-### `mcp`
+### `mcp-server`
 
-MCP-Server; Modus `app`, Konflikte mit `cli` und `app-main`, bietet
-`entrypoint.mcp`.
+MCP-Server-Baustein; Modus `app`, bietet `mcp.server` und das
+fähigkeitsabhängige Rezept `mcp-dev`.
 
 **Dateien**
 
 | Quelle | Ziel |
 | --- | --- |
 | `templates/server.py.j2` | `src/<paket>/server.py` |
-| `templates/main.py.j2` | `src/<paket>/main.py` |
-| `templates/test_smoke.py.j2` | `tests/test_smoke.py` |
+| `templates/test_mcp.py.j2` | `tests/test_mcp.py` |
 
-**Rezept:** `mcp-dev`.
+**Rezept:** `mcp-dev` (nur mit einem passenden Entrypoint).
 
 **Laufzeitabhängigkeit:** `mcp>=2.3.0,<3`.
 
 **Besonderheiten**
 
 - `server.py` erzeugt einen `MCPServer` mit dem Tool `add` und der Resource
-  `greeting://{name}`. `main()` startet den Server über stdio.
-- `just run` startet denselben installierten Entrypoint; `just mcp-dev` öffnet
-  den gepinnten Inspector `@modelcontextprotocol/inspector@2.12.0` auf
-  `127.0.0.1` über `npx` und braucht Node.js. Beides ist nicht Teil von
-  `just check`.
-- Der Smoke-Test prüft Tool, Resource und Entrypoint über den In-Memory-`Client`
-  des SDK (anyio/asyncio).
+  `greeting://{name}`. Das Artefakt liefert bewusst weder `main.py` noch einen
+  Entrypoint; es ist ein Baustein für `cli` oder `mcp`.
+- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
+  SDK (anyio/asyncio). Mit `entrypoint.cli` prüft die Datei zusätzlich die
+  Weiterleitung des CLI-Befehls `mcp`; den stdio-Entrypoint prüft `mcp` in
+  `tests/test_smoke.py`.
+- `mcp-dev` öffnet den gepinnten Inspector
+  `@modelcontextprotocol/inspector@2.12.0` auf `127.0.0.1` über `npx` und
+  braucht Node.js. Mit `entrypoint.mcp` startet es `uv run <projekt>`, mit
+  `entrypoint.cli` `uv run <projekt> mcp`; ohne passenden Entrypoint entfällt
+  das Rezept. `just check` braucht kein Node.js. README und AGENTS.md nennen
+  in diesem Fall auch keinen MCP-Startweg.
+
+### `mcp`
+
+Eigenständiger MCP-Einstieg; Modus `app`, verlangt `mcp-server`, Konflikte mit
+`cli` und `app-main`, bietet `entrypoint.mcp`.
+
+**Dateien**
+
+| Quelle | Ziel |
+| --- | --- |
+| `templates/main.py.j2` | `src/<paket>/main.py` |
+| `templates/test_smoke.py.j2` | `tests/test_smoke.py` |
+
+**Besonderheiten**
+
+- `main()` startet den in `mcp-server` definierten Server über stdio.
+  `just run` nutzt denselben installierten Entrypoint; `mcp-dev` kommt aus
+  `mcp-server`.
+- `tests/test_smoke.py` prüft nur den Entrypoint; Tool und Resource liegen in
+  `tests/test_mcp.py` aus `mcp-server`. Damit teilen sich die kombinierten
+  Profile keine Testdatei mit widersprüchlichem Inhalt.
+- Das Artefakt trägt keine eigene Abhängigkeit; `mcp-server` liefert
+  `mcp>=2.3.0,<3`.
 - **Selbstabhängigkeit:** Heißt das Projekt normalisiert `mcp`, versucht
   `uv lock`, das Projekt als Abhängigkeit seiner selbst aufzulösen. Der
   Preflight lehnt das ab – auch mit `--dry-run` und bei externen Profilen mit
-  MCP-Artefakt. Ein abweichender Name wie `arithmetic-mcp` ist nötig; der
-  Profilname bleibt `mcp` (Attention Point AP-2, ADR-0007).
+  MCP-Abhängigkeit. Das gilt für `mcp` und `cli-mcp`. Ein abweichender Name wie
+  `arithmetic-mcp` ist nötig; der Profilname bleibt `mcp` (Attention Point
+  AP-2, ADR-0007).
 
 ## Profile
 
@@ -410,12 +455,14 @@ MCP-Server; Modus `app`, Konflikte mit `cli` und `app-main`, bietet
 | --- | --- | --- | --- | --- |
 | `app` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `app-main`, `e2e`, `agent`, `refactor` | Anwendung mit einfachem Einstieg, Smoke-Test, opt-in-Suiten, Design-Report, Agentendokumenten |
 | `app-cli` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `cli`, `e2e`, `agent`, `refactor` | Wie `app`, aber mit Typer-CLI und generierter CLI-Referenz statt `app-main` |
+| `cli-mcp` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `cli`, `mcp-server`, `e2e`, `agent`, `refactor` | Typer-CLI mit `mcp`-Subkommando, MCP-Servermodul, Inspector-Rezept und einem Entrypoint |
 | `lib` | `lib` | `base-lib` → `base-app` | `agent-docs`, `adr`, `ap`, `e2e`, `agent`, `refactor`, `diataxis` | Bibliothek mit MkDocs-/Diátaxis-Gerüst, Release-Workflow und Versions-Smoke-Test |
 | `mcp` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `mcp`, `e2e`, `agent`, `refactor` | Anwendung mit MCP-Server, Inspector-Rezept und SDK-Smoke-Tests |
 
 Alle Profile bringen `agent-docs`, `adr`, `ap`, `e2e`, `agent` und `refactor`
-mit; sie unterscheiden sich im Einstieg (`app-main`, `cli`, `mcp`) und bei `lib`
-zusätzlich durch die Dokumentationsartefakte. Externe Profile
+mit; sie unterscheiden sich im Einstieg (`app-main`, `cli`, `mcp`, `cli` +
+`mcp-server`) und bei `lib` zusätzlich durch die Dokumentationsartefakte.
+Externe Profile
 (`--profile-file`) dürfen nur gebündelte Artefakt-IDs referenzieren.
 
 ## Laufzeitprüfung

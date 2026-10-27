@@ -184,6 +184,7 @@ def test_mcp_profile_resolves_entrypoint_capability() -> None:
         "agent-docs",
         "adr",
         "ap",
+        "mcp-server",
         "mcp",
         "e2e",
         "agent",
@@ -192,24 +193,49 @@ def test_mcp_profile_resolves_entrypoint_capability() -> None:
     assert {capability for capability in resolution.capabilities if capability.startswith("entrypoint.")} == {
         "entrypoint.mcp"
     }
+    assert "mcp.server" in resolution.capabilities
     assert resolution.runtime_dependencies == ("mcp>=2.3.0,<3",)
     assert "mcp[cli]>=2.3.0,<3" not in resolution.dev_dependencies
 
 
-@pytest.mark.parametrize("name", ["mcp", "MCP", "Mcp"])
-def test_mcp_project_name_collides_with_sdk_dependency(name: str) -> None:
-    """The MCP profile rejects a project that would depend on itself."""
+def test_cli_mcp_profile_combines_cli_and_server_capabilities() -> None:
+    """The combined profile has one CLI entry point and one MCP server."""
     data = load_catalog()
-    resolution = resolve(data.profile("mcp"), data)
+    resolution = resolve(data.profile("cli-mcp"), data)
+    assert [item.id for item in resolution.artifacts] == [
+        "base-app",
+        "agent-docs",
+        "adr",
+        "ap",
+        "cli",
+        "mcp-server",
+        "e2e",
+        "agent",
+        "refactor",
+    ]
+    assert {capability for capability in resolution.capabilities if capability.startswith("entrypoint.")} == {
+        "entrypoint.cli"
+    }
+    assert "mcp.server" in resolution.capabilities
+    assert resolution.runtime_dependencies == ("typer>=0.27.3", "mcp>=2.3.0,<3")
+
+
+@pytest.mark.parametrize("profile_id", ["mcp", "cli-mcp"])
+@pytest.mark.parametrize("name", ["mcp", "MCP", "Mcp"])
+def test_mcp_project_name_collides_with_sdk_dependency(profile_id: str, name: str) -> None:
+    """The MCP profiles reject a project that would depend on itself."""
+    data = load_catalog()
+    resolution = resolve(data.profile(profile_id), data)
     with pytest.raises(SelfDependencyError, match="MCP SDK"):
         validate_project_dependencies(name, resolution)
 
 
+@pytest.mark.parametrize("profile_id", ["mcp", "cli-mcp"])
 @pytest.mark.parametrize("name", ["arithmetic-mcp", "mcp-project", "my-mcp"])
-def test_mcp_project_names_without_collision_pass(name: str) -> None:
+def test_mcp_project_names_without_collision_pass(profile_id: str, name: str) -> None:
     """Names that only contain 'mcp' remain allowed."""
     data = load_catalog()
-    resolution = resolve(data.profile("mcp"), data)
+    resolution = resolve(data.profile(profile_id), data)
     validate_project_dependencies(name, resolution)
 
 
