@@ -14,7 +14,7 @@ CONTRACT_VERSION = 4
 # This is the single source of truth for the value written to AGENTS.md; it must
 # be bumped together with the `version:` frontmatter field in
 # ludesta/Luxus-Python-Stack/lupysta/SKILL.md.
-LUPYSTA_VERSION = "0.13.0"
+LUPYSTA_VERSION = "0.14.0"
 MINIMUM_PYTHON = (3, 11)
 
 
