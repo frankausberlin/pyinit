@@ -8,10 +8,13 @@
   scheitern vor Staging und `uv lock`, auch mit `--dry-run`.
 * **Änderungen**: MCP-Justfile-Fragment und Artefaktabhängigkeiten angepasst;
   `validate_project_dependencies` und `SelfDependencyError` ergänzt; README-
-  und AGENTS-Templates, ADR-0005/0006/0007 und AP-2 aktualisiert. Regressionstest
+  und AGENTS-Templates, ADR-0004 und den Attention Point „MCP-Projekt nicht
+  `mcp` nennen“ aktualisiert. Die Details zum Inspector-Start und zur
+  Namensprüfung stehen inzwischen in `docs/artefakte.md`. Regressionstest
   führt das Rezept über Fake-`npx`/`uv`, den echten Paket-Entrypoint und einen
   relativen Import aus. `just check` und `just test-generated` sind grün.
-* **ADRs**: ADR-0006 (neu), ADR-0007 (neu); ADR-0005 ersetzt
-* **Attention Points**: AP-2 (präzisiert)
+* **ADRs**: ADR-0004 (damals als ADR-0005 angelegt); die früheren ADRs 0006
+  und 0007 sind inzwischen in `docs/artefakte.md` überführt.
+* **Attention Points**: MCP-Projekt nicht `mcp` nennen (präzisiert)
 * **Offen**: Ein interaktiver Inspector-Lauf mit Node.js wurde nicht
   durchgeführt; der Startweg ist im Regressionstest ohne Node.js ausgeführt.

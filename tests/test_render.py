@@ -97,6 +97,30 @@ def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: 
     assert scripts == {"demo": "demo.main:main"}
 
 
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
+def test_agents_adr_and_ap_sections_use_current_conventions(profile_id: str, tmp_path: Path) -> None:
+    """AGENTS.md delegates ADR conventions and uses title-based Attention Points."""
+    catalog = load_catalog()
+    profile = catalog.profile(profile_id)
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    by_target = {item.target: item.content for item in files}
+    agents = by_target["AGENTS.md"]
+    assert "`docs/adr/`" in agents
+    assert "`docs/adr/README.md`" in agents
+    assert "Der Agent liest ADRs nur" in agents
+    assert "Er legt keine an" in agents
+    assert "### AP-" not in agents
+    assert "entfernt (" not in agents
+    assert "**Involvierte ADRs**" not in agents
+    assert "**Kontext**" not in agents
+    assert "### Kurztitel" in agents
+    adr_readme = by_target["docs/adr/README.md"]
+    assert "Der Projektnutzer legt ADRs an und pflegt sie" in adr_readme
+    assert "der Agent liest sie nur" in adr_readme
+    assert "`pyinit` erzeugt keine ADR" in adr_readme
+    assert "AGENTS.md" not in adr_readme
+
+
 def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> None:
     """The MCP profile ships a server, stdio entry point, and Inspector recipe."""
     catalog = load_catalog()

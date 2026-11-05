@@ -26,8 +26,10 @@ nicht im Profil genannt, sondern aus dem Modus injiziert: `app` → `base-app`,
 - **Justfile-Fragmente** werden in Auflösungsreihenfolge an das Basis-Justfile
   gehängt. Das Basisartefakt liefert `set shell := ["bash", "-uc"]`.
 - **Abhängigkeiten** werden je Gruppe (`runtime`, `dev`, `e2e`) zusammengeführt.
-  Abweichende Constraints für denselben Namen brechen ab; ein Projektname, der
-  einer eigenen Abhängigkeit entspricht, wird im Preflight abgelehnt.
+  Abweichende Constraints für denselben Namen brechen ab. Der Preflight
+  vergleicht den normalisierten Projektnamen mit den normalisierten Namen aller
+  aufgelösten Laufzeit-, Entwicklungs- und E2E-Abhängigkeiten und lehnt eine
+  Kollision ab; das gilt auch für `--dry-run` und externe Profile.
 - **Templates** laufen mit `StrictUndefined`: Eine fehlende Variable bricht laut
   ab, statt still eine Lücke zu lassen. Statische Dateien (`render = false`)
   werden byte-genau kopiert; `executable = true` setzt das Ausführungsbit.
@@ -50,6 +52,11 @@ verschiebt das Ergebnis erst dann an das Ziel. Danach folgen `git init -b main`
 (nur wenn kein `.git` vorhanden ist), `uv sync`, `uv run pre-commit install`,
 bei Bedarf `just docs` und – sofern nicht `--no-check` – `just check`.
 `--dry-run` zeigt genau diesen Plan, ohne zu schreiben.
+
+`pyinit` legt nur neue Projekte an. Es gibt kein `add`, kein Update und keinen
+Merge in bestehende Projekte; ein Ziel muss fehlen, leer sein oder nur `.git`
+enthalten. Eine bewusste Migration bestehender Projekte läuft über den
+Stack-Auftrag `Projekt-Migration`, nicht über den Generator.
 
 ## Artefakte
 
@@ -179,14 +186,13 @@ Dokumente für die agentische Arbeit; bietet `agents.docs`.
 **Besonderheiten**
 
 - `AGENTS.md` ist die Projektquelle: Projektprofil, Testing-Abschnitt mit
-  fähigkeitsabhängigen MCP-Hinweisen (`mcp.server`), optional ADR-Konventionen
+  fähigkeitsabhängigen MCP-Hinweisen (`mcp.server`), optional ADR-Hinweis
   (bei `adr`), optional Attention-Point-Gerüst (bei `ap`) und Herkunft mit
   `lupysta_version` sowie `contract_version`.
 - `lupysta_version` stammt aus `LUPYSTA_VERSION` in `src/pyinit/models.py`; der
-  Wert steht nur dort und wird über den Template-Kontext gerendert. Er wird
-  zusammen mit dem Feld `version:` in
-  `ludesta/Luxus-Python-Stack/lupysta/SKILL.md` gepflegt
-  (siehe [`../docs/adr/0008-lupysta-version-als-konstante.md`](../docs/adr/0008-lupysta-version-als-konstante.md)).
+  Wert steht nur dort und wird über den Template-Kontext gerendert. Der
+  manuelle Abgleich mit dem Feld `version:` in
+  `ludesta/Luxus-Python-Stack/lupysta/SKILL.md` ist in `AGENTS.md` begründet.
 - `journal/README.md` legt die Chronik-Konvention fest: ein unveränderlicher
   Eintrag pro Sitzung, Dateiname `YYYY-MM-DD-HHMM-<slug>.md` in UTC, kein
   Frontmatter.
@@ -204,20 +210,25 @@ ADR-Konvention; verlangt `agent-docs`, bietet `agents.adr`.
 **Besonderheiten**
 
 - Es wird nur das Verzeichnis mit Konvention angelegt, keine ADR selbst.
+- Die Konvention gehört dem Projektnutzer: Er legt ADRs an und pflegt sie; der
+  Agent liest sie nur und ändert sie nicht. Die erste ADR legt der Nutzer an.
 - Dateinamen `NNNN-entscheidung.md`, Status im Dokument, Revisionen mit
   `_`-Präfix und unveränderter Nummer.
+- Akzeptierte ADRs sind inhaltlich unveränderlich; Änderungen entstehen als
+  neue ADR.
 
 ### `ap`
 
-Attention-Point-Abschnitt; verlangt `agent-docs`, bietet `agents.ap`.
+Attention-Points-Abschnitt; verlangt `agent-docs`, bietet `agents.ap`.
 
 **Dateien:** keine eigene Datei.
 
 **Besonderheiten**
 
 - Das Artefakt schaltet im `AGENTS.md`-Template den Abschnitt
-  `## Attention Points` samt Kommentar-Gerüst frei. Entfernte APs bleiben mit
-  Nummer stehen; Nummern werden nicht neu vergeben.
+  `## Attention Points` samt Kommentar-Gerüst frei.
+- Attention Points tragen keine Nummern; der Titel ist die Identität. Obsolete
+  Einträge werden ersatzlos gelöscht, die Git-Historie ist das Archiv.
 
 ### `refactor`
 
@@ -417,8 +428,11 @@ fähigkeitsabhängige Rezept `mcp-dev`.
   `@modelcontextprotocol/inspector@2.12.0` auf `127.0.0.1` über `npx` und
   braucht Node.js. Mit `entrypoint.mcp` startet es `uv run <projekt>`, mit
   `entrypoint.cli` `uv run <projekt> mcp`; ohne passenden Entrypoint entfällt
-  das Rezept. `just check` braucht kein Node.js. README und AGENTS.md nennen
-  in diesem Fall auch keinen MCP-Startweg.
+  das Rezept. Der Start über den Projekt-Entrypoint ist bewusst: Die SDK-CLI
+  lädt eine Datei ohne Paketkontext, sodass relative Importe brechen; Inspector
+  und `just run` nutzen so denselben Importweg, und das Entwicklungsextra
+  `mcp[cli]` entfällt. `just check` braucht kein Node.js. README und AGENTS.md
+  nennen in diesem Fall auch keinen MCP-Startweg.
 
 ### `mcp`
 
@@ -444,10 +458,11 @@ Eigenständiger MCP-Einstieg; Modus `app`, verlangt `mcp-server`, Konflikte mit
   `mcp>=2.3.0,<3`.
 - **Selbstabhängigkeit:** Heißt das Projekt normalisiert `mcp`, versucht
   `uv lock`, das Projekt als Abhängigkeit seiner selbst aufzulösen. Der
-  Preflight lehnt das ab – auch mit `--dry-run` und bei externen Profilen mit
-  MCP-Abhängigkeit. Das gilt für `mcp` und `cli-mcp`. Ein abweichender Name wie
+  Preflight vergleicht den normalisierten Projektnamen mit allen aufgelösten
+  Abhängigkeiten und lehnt das ab – auch mit `--dry-run` und bei externen
+  Profilen. Das gilt für `mcp` und `cli-mcp`. Ein abweichender Name wie
   `arithmetic-mcp` ist nötig; der Profilname bleibt `mcp` (Attention Point
-  AP-2, ADR-0007).
+  „MCP-Projekt nicht `mcp` nennen“).
 
 ## Profile
 

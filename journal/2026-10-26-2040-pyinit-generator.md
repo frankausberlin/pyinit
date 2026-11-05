@@ -9,6 +9,6 @@
   mit `just test-generated`, CI-Job `generated`, neue CLI-Referenz und
   Projektdokumentation.
 * **ADRs**: 0001, 0002, 0003, 0004
-* **Attention Points**: AP-1
+* **Attention Points**: Generierte Projektprüfung gehört in `test-generated`
 * **Offen**: `mcp`-Artefakt und Profil als Folgeschritt; Ablösung der alten
   Shell-Funktion im Luxus-Python-Stack als separate Änderung.

@@ -14,11 +14,21 @@ uv run pyinit new cli-mcp arithmetic-tool           # CLI with an `mcp` subcomma
 uv run pyinit new app . --dry-run                   # print the plan, write nothing
 ```
 
-Available profiles are `app`, `app-cli`, `cli-mcp`, `lib`, and `mcp`.
-Generation writes only new projects; it never updates or merges into an
-existing project. A target must be missing, empty, or contain only `.git`. Use
+Available profiles are `app`, `app-cli`, `cli-mcp`, `lib`, and `mcp`. Use
 `--no-check` to skip the final `just check`, and `--profile-file` to load an
 external profile (artifacts stay bundled).
+
+## Scope
+
+- `pyinit` is an initializer, not a migration tool. It creates new projects
+  only; the target must be missing, empty, or contain only `.git`.
+- There is no update or merge mode for existing projects. Migrating an existing
+  project is a deliberate task through the stack's `Projekt-Migration`
+  workflow.
+- The MCP preflight rejects a normalized project name that collides with one of
+  the project's own resolved dependencies. A project cannot be named `mcp`;
+  use a distinct name such as `arithmetic-mcp`. The check also applies to
+  `--dry-run` and external profiles.
 
 ## Getting Started
 

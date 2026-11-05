@@ -52,34 +52,23 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 {% endif %}{% endif %}{% if "adr" in artifacts %}
 ## ADRs
 
-Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit
-`ls -1 docs/adr` einen Überblick, falls das Verzeichnis existiert.
-
-* Dateiname: `NNNN-entscheidung.md`, zum Beispiel `0001-wir-verwenden-zsh.md`.
-  Der Name nennt die Entscheidung, nicht nur das Thema.
-* Ein `ADR`-Präfix im Dateinamen ist nicht nötig; das Verzeichnis benennt die
-  Dokumentart.
-* Der Name reicht für den Überblick; lies eine aktive ADR, wenn ihre
-  Entscheidung die Aufgabe berührt.
-* Revidierte Entscheidungen tragen ein `_`-Präfix, zum Beispiel
-  `_0001-wir-verwenden-zsh.md`. Ihre Nummer bleibt vergeben.
-* Der Status steht im Dokument: `accepted`, `superseded by ADR-NNNN` oder
-  `deprecated`.
+Architekturentscheidungen liegen in `docs/adr/`; die Konvention steht in
+`docs/adr/README.md`. Der Agent liest ADRs nur: Er legt keine an, ändert sie
+nicht und nummeriert sie nicht um.
 {% endif %}{% if "ap" in artifacts %}
 ## Attention Points
 
 <!--
 Format eines Eintrags:
 
-    ### AP-1: Kurztitel
+    ### Kurztitel
 
-    - **Situation**: ...
-    - **Handhabung**: ...
-    - **Involvierte ADRs**: ...
-    - **Kontext**: ...
+    - **Situation**: Genau ein Satz; wiederholt die Überschrift nicht.
+    - **Handhabung**: Kurzer Satz oder knappe Liste.
 
-Entfernte APs bleiben als `### AP-N: entfernt (YYYY-MM-DD)` stehen; ihre
-Nummer wird nicht neu vergeben.
+Attention Points sind gegenwartsbezogen: keine Nummern, keine Tombstones und
+keine Felder für beteiligte ADRs oder Kontext. Obsolete Einträge werden
+ersatzlos gelöscht; die Git-Historie ist das Archiv.
 -->
 {% endif %}
 ## Herkunft

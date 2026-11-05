@@ -1,4 +1,4 @@
-# 0009 – CLI und MCP teilen einen Entrypoint
+# 0005 – CLI und MCP teilen einen Entrypoint
 
 - Status: accepted
 - Datum: 2026-10-27
@@ -52,8 +52,8 @@ Zieldatei doppelt.
   `tests/test_smoke.py` (Entrypoint) und `tests/test_mcp.py` (Server).
 - `mcp-server` ist allein kein sinnvoller Einstieg, sondern ein Baustein für
   `cli` oder `mcp`.
-- Die Selbstabhängigkeitsprüfung aus ADR-0007 gilt automatisch auch für
-  `cli-mcp`, weil sie das aufgelöste Abhängigkeitsset prüft.
+- Die Selbstabhängigkeitsprüfung wertet das aufgelöste Abhängigkeitsset aus und
+  gilt damit automatisch auch für `cli-mcp`.
 - Templates dürfen Fähigkeiten auswerten; der Resolver braucht dafür keine neue
   Regel, weil `mcp.server` außerhalb der Einmal-Namensräume `entrypoint.*` und
   `docs.*` liegt.

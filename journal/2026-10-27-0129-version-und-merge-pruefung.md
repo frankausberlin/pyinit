@@ -21,10 +21,10 @@
   danach schlug `git branch -d` fehl (Exit 1, Branch blieb stehen). Das ist
   genau der in der Skill-Doku beschriebene Harness-Ablauf. Behoben, Test
   `test_merges_from_linked_worktree_and_removes_it` deckt den Fall ab.
-* **ADRs**: ADR-0008 (neu) – lupysta-Version als Konstante im Generator,
-  Abgleich über die Repo-Grenze bewusst manuell.
-* **Attention Points**: AP-3 (neu) – Herkunft erzeugter Projekte ist nicht
-  selbstaktualisierend; `AGENTS.md`/`pyinit.toml` bei Abweichung nicht
+* **ADRs**: keine neuen; die Begründung für die Konstante und den manuellen
+  Abgleich über die Repo-Grenze steht in `AGENTS.md` und `docs/artefakte.md`.
+* **Attention Points**: Herkunft erzeugter Projekte ist nicht
+  selbstaktualisierend (neu); `AGENTS.md`/`pyinit.toml` bei Abweichung nicht
   stillschweigend umschreiben.
 * **Offen**: Es gibt weiterhin keinen Upgrade-Pfad (`pyinit doctor`/`diff`).
   Ebenso unbestimmt ist, wann `CONTRACT_VERSION` zu erhöhen ist; mit dem neuen

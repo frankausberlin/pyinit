@@ -44,6 +44,10 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Basisartefakte `base-app`/`base-lib` werden aus dem Profilmodus injiziert.
 - Gemeinsame Dateien werden genau einmal von der Basis oder `agent-docs`
   gerendert; Artefakte liefern Includes und Justfile-Fragmente.
+- `pyinit` legt nur neue Projekte an; ein Ziel muss fehlen, leer sein oder nur
+  `.git` enthalten. Update/Merge in bestehende Projekte gibt es nicht. Die
+  bewusste Migration bestehender Projekte ist ein separater Stack-Auftrag
+  (`Projekt-Migration`).
 - Tests für den Generator gehören in `tests/`; erzeugte Projekte werden über
   `just test-generated` geprüft.
 
@@ -59,78 +63,63 @@ Verwende für die Entwicklung immer den lupysta-Skill.
   sind ein Fehler.
 - Ein Bump von `LUPYSTA_VERSION` wird mit dem Feld `version:` in
   `ludesta/Luxus-Python-Stack/lupysta/SKILL.md` abgeglichen. Einen
-  automatischen Abgleich über die Repo-Grenze gibt es bewusst nicht
-  (Begründung: `docs/adr/0008-lupysta-version-als-konstante.md`); die Tests
-  sichern nur die Repo-interne Einmaligkeit.
+  automatischen Abgleich über die Repo-Grenze gibt es bewusst nicht: Er würde
+  die eigenständigen Repositories über Netzwerk und Fremdzustand koppeln; ein
+  fehlgeschlagener Clone würde das Gate blockieren, obwohl die Änderung nichts
+  damit zu tun hat. Die Tests sichern nur die Repo-interne Einmaligkeit.
 
 ## ADRs
 
-Architekturentscheidungen liegen als Dateien in `docs/adr/`. Verschaffe dir mit
-`ls -1 docs/adr` einen Überblick, falls das Verzeichnis existiert.
-
-* Dateiname: `NNNN-entscheidung.md`, zum Beispiel `0001-wir-verwenden-zsh.md`.
-  Der Name nennt die Entscheidung, nicht nur das Thema.
-* Ein `ADR`-Präfix im Dateinamen ist nicht nötig; das Verzeichnis benennt die
-  Dokumentart.
-* Der Name reicht für den Überblick; lies eine aktive ADR, wenn ihre
-  Entscheidung die Aufgabe berührt.
-* Revidierte Entscheidungen tragen ein `_`-Präfix, zum Beispiel
-  `_0001-wir-verwenden-zsh.md`. Ihre Nummer bleibt vergeben.
-* Der Status steht im Dokument: `accepted`, `superseded by ADR-NNNN` oder
-  `deprecated`.
+Architekturentscheidungen liegen in `docs/adr/`; die Konvention steht in
+`docs/adr/README.md`. Der Agent liest ADRs nur: Er legt keine an, ändert sie
+nicht und nummeriert sie nicht um.
 
 ## Attention Points
 
 <!--
 Format eines Eintrags:
 
-    ### AP-1: Kurztitel
+    ### Kurztitel
 
-    - **Situation**: ...
-    - **Handhabung**: ...
-    - **Involvierte ADRs**: ...
-    - **Kontext**: ...
+    - **Situation**: Genau ein Satz; wiederholt die Überschrift nicht.
+    - **Handhabung**: Kurzer Satz oder knappe Liste.
 
-Entfernte APs bleiben als `### AP-N: entfernt (YYYY-MM-DD)` stehen; ihre
-Nummer wird nicht neu vergeben.
+Attention Points sind gegenwartsbezogen: keine Nummern, keine Tombstones und
+keine Felder für beteiligte ADRs oder Kontext. Obsolete Einträge werden
+ersatzlos gelöscht; die Git-Historie ist das Archiv.
 -->
 
-### AP-1: Generierte Projektprüfung gehört in `test-generated`
+### Generierte Projektprüfung gehört in `test-generated`
 
 - **Situation**: Erzeugte Projekte brauchen `uv sync`, Netzwerk und die echte
-  `just`-Toolchain. Die Docker-Suite läuft hermetisch mit `--network none`.
+  `just`-Toolchain, während die Docker-Suite hermetisch mit `--network none`
+  läuft.
 - **Handhabung**: `just check` im erzeugten Projekt läuft über
   `just test-generated` auf dem Host bzw. in CI. Die Docker-Suite prüft
   stattdessen `--dry-run`, Dateipläne und Atomarität mit Fake-Tools.
-- **Involvierte ADRs**: ADR-0001, ADR-0003.
-- **Kontext**: Ein grüner Generator-Test soll nicht durch fehlendes Netzwerk
-  oder einen anderen Interpreter im Container verfälscht werden.
 
-### AP-2: MCP-Projekt nicht `mcp` nennen
+### MCP-Projekt nicht `mcp` nennen
 
 - **Situation**: Die Profile `mcp` und `cli-mcp` hängen über `mcp-server` von
-  der PyPI-Distribution `mcp` ab. Heißt das erzeugte Projekt selbst `mcp`,
-  versucht `uv lock`, das Projekt als Abhängigkeit seiner selbst aufzulösen,
-  und bricht mit einer unsatisfiable-Resolution ab.
-- **Handhabung**: `pyinit` lehnt den normalisierten Projektnamen `mcp` im
-  Preflight ab, sobald das aufgelöste Artefaktset die MCP-Abhängigkeit enthält;
-  das gilt auch für `--dry-run` und externe Profile sowie für die Profile `mcp`
-  und `cli-mcp`. Für Profil-Checks und Nutzerbeispiele ist ein abweichender
-  Name nötig, etwa `mcp-project` oder ein fachlicher Name wie
-  `arithmetic-mcp`. Der Profilname bleibt `mcp`, nur der Projektname muss
-  abweichen.
-- **Involvierte ADRs**: ADR-0007.
-- **Kontext**: `scripts/test-generated.sh` legt das Ziel für `mcp` als
-  `mcp-project` an; die übrigen Profile behalten ihren Profilnamen.
+  der PyPI-Distribution `mcp` ab; ein Projekt namens `mcp` versucht `uv lock`
+  deshalb, als Abhängigkeit seiner selbst aufzulösen, und bricht mit einer
+  unsatisfiable-Resolution ab.
+- **Handhabung**:
+  - `pyinit` lehnt den normalisierten Projektnamen `mcp` im Preflight ab,
+    sobald das aufgelöste Artefaktset die MCP-Abhängigkeit enthält; das gilt
+    auch für `--dry-run`, externe Profile sowie die Profile `mcp` und
+    `cli-mcp`.
+  - Für Profil-Checks und Nutzerbeispiele ist ein abweichender Name nötig,
+    etwa `mcp-project` oder ein fachlicher Name wie `arithmetic-mcp`. Der
+    Profilname bleibt `mcp`, nur der Projektname muss abweichen.
+  - `scripts/test-generated.sh` legt das Ziel für `mcp` als `mcp-project` an;
+    die übrigen Profile behalten ihren Profilnamen.
 
-### AP-3: Herkunft erzeugter Projekte ist nicht selbstaktualisierend
+### Herkunft erzeugter Projekte ist nicht selbstaktualisierend
 
 - **Situation**: `pyinit` legt nur neue Projekte an und aktualisiert keine
-  bestehenden. `AGENTS.md` (Herkunft) und `pyinit.toml` eines Projekts nennen
-  deshalb die Skill- und Contract-Version zum Zeitpunkt der Erzeugung. Diese
-  Datei hier ist selbst so ein Fall: sie nennt `lupysta_version: 0.11.0`, der
-  installierte Skill ist älter oder neuer – je nachdem, wann zuletzt erzeugt
-  wurde.
+  bestehenden, sodass `AGENTS.md` (Herkunft) und `pyinit.toml` eines Projekts
+  die Skill- und Contract-Version zum Zeitpunkt der Erzeugung nennen.
 - **Handhabung**: Vor Arbeiten an einem generierten Projekt die Herkunft lesen
   und mit `version:` in `ludesta/Luxus-Python-Stack/lupysta/SKILL.md`
   vergleichen. Bei Abweichung die Differenz melden und die betroffenen Dateien
@@ -138,12 +127,8 @@ Nummer wird nicht neu vergeben.
   umschreiben, als wäre das Projekt neu erzeugt worden. Einen echten
   Upgrade-Pfad (`pyinit doctor`/`diff`) gibt es noch nicht – nicht ungefragt
   nachbauen, sondern als Aufgabe anlegen.
-- **Involvierte ADRs**: ADR-0004, ADR-0008.
-- **Kontext**: Ein Bump von `LUPYSTA_VERSION` wirkt nur auf neu erzeugte
-  Projekte. Bereits erzeugte Projekte bleiben auf ihrem Stand, bis sie
-  manuell nachgezogen werden.
 
 ## Herkunft
 
-- lupysta_version: `0.11.0`
+- lupysta_version: `0.15.0`
 - contract_version: `4`
