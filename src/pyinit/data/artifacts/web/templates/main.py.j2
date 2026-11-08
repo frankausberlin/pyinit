@@ -1,0 +1,17 @@
+"""Console entry point that starts the {{ project_name }} web application."""
+
+from __future__ import annotations
+
+import uvicorn
+
+from {{ package_name }}.config import Settings
+
+
+def main() -> None:
+    """Run the web application with uvicorn."""
+    settings = Settings.from_env()
+    uvicorn.run("{{ package_name }}.app:app", host=settings.host, port=settings.port)
+
+
+if __name__ == "__main__":
+    main()

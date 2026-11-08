@@ -21,9 +21,13 @@ def test_data_root_contains_profiles_and_templates() -> None:
     assert root.joinpath("profiles", "app-cli.toml").is_file()
     assert root.joinpath("profiles", "cli-mcp.toml").is_file()
     assert root.joinpath("profiles", "lib.toml").is_file()
+    assert root.joinpath("profiles", "web.toml").is_file()
     template = root.joinpath("artifacts", "base-app", "templates", "pyproject.toml.j2")
     assert template.is_file()
     assert root.joinpath("artifacts", "mcp-server", "templates", "server.py.j2").is_file()
+    assert root.joinpath("artifacts", "web", "templates", "app.py.j2").is_file()
+    assert root.joinpath("artifacts", "web", "files", "records_detail.html").is_file()
+    assert root.joinpath("artifacts", "web", "files", "style.css").is_file()
 
 
 def test_built_wheel_contains_generator_data(tmp_path: Path) -> None:

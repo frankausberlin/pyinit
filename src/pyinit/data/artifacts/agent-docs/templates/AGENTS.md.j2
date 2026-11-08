@@ -10,7 +10,7 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 
 - Projektname: `{{ project_name }}`
 - Paketname: `{{ package_name }}`
-- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "entrypoint.cli" in capabilities and "mcp.server" in capabilities %}App (CLI mit MCP-Server){% elif "entrypoint.cli" in capabilities %}App (CLI){% elif "mcp.server" in capabilities %}App (MCP-Server){% else %}App{% endif %}
+- Projekttyp: {% if mode == "lib" %}Bibliothek{% elif "entrypoint.web" in capabilities %}App (Web mit FastAPI){% elif "entrypoint.cli" in capabilities and "mcp.server" in capabilities %}App (CLI mit MCP-Server){% elif "entrypoint.cli" in capabilities %}App (CLI){% elif "mcp.server" in capabilities %}App (MCP-Server){% else %}App{% endif %}
 - Python-Version: `{{ python_version }}`
 - Quellpfad: `src/{{ package_name }}/`
 - Testpfad: `tests/`
@@ -31,7 +31,13 @@ Verwende für die Entwicklung immer den lupysta-Skill.
 - Das Verzeichnis-Gate steht in `tests/conftest.py`; die Suite-Guards brechen
   ab, bevor Testmodule importiert werden, wenn eine Suite ohne Opt-in
   gesammelt wird.
-{% if "mcp.server" in capabilities %}{% if "entrypoint.cli" in capabilities %}- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
+{% if "entrypoint.web" in capabilities %}- `tests/test_smoke.py`, `tests/test_web_actions.py` und `tests/test_web_live.py`
+  decken Seiten, POST-Action und WebSocket ab. `just dev` und `just serve`
+  starten uvicorn direkt; `just run` nutzt den installierten Entrypoint.
+- Der Beispielcode hat weder Authentifizierung noch CSRF-Schutz. Vor einem
+  Einsatz außerhalb einer vertrauenswürdigen lokalen Umgebung `web-auth`
+  ergänzen.
+{% endif %}{% if "mcp.server" in capabilities %}{% if "entrypoint.cli" in capabilities %}- `tests/test_mcp.py` prüft Tool und Resource über den In-Memory-`Client` des
   SDK sowie die CLI-Weiterleitung an den Server. `tests/test_smoke.py` prüft die
   CLI und stellt sicher, dass `hello` den Server nicht startet.
 - `just run` führt den Befehl `hello` aus. `just mcp-dev` öffnet den gepinnten

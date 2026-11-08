@@ -1,0 +1,7 @@
+# Run the web app with auto-reload for development
+dev:
+    uv run uvicorn {{ package_name }}.app:app --reload --host "${WEB_HOST:-127.0.0.1}" --port "${WEB_PORT:-8000}"
+
+# Run the web app without auto-reload
+serve:
+    uv run uvicorn {{ package_name }}.app:app --host "${WEB_HOST:-127.0.0.1}" --port "${WEB_PORT:-8000}"

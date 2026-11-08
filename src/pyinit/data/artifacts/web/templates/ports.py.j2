@@ -1,0 +1,23 @@
+"""Ports (protocols) the web application depends on."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from {{ package_name }}.domain.models import Record
+
+
+class RecordRepository(Protocol):
+    """Read and update records."""
+
+    def list(self) -> list[Record]:
+        """Return all records."""
+        ...
+
+    def get(self, record_id: str) -> Record | None:
+        """Return one record or ``None``."""
+        ...
+
+    def touch(self, record_id: str) -> Record | None:
+        """Mark one record as touched and return it, or ``None``."""
+        ...

@@ -1,0 +1,26 @@
+"""FastAPI dependencies shared by the routes."""
+
+from __future__ import annotations
+
+from typing import cast
+
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+
+from {{ package_name }}.config import Settings
+from {{ package_name }}.domain.ports import RecordRepository
+
+
+def get_repository(request: Request) -> RecordRepository:
+    """Return the repository stored on the application state."""
+    return cast(RecordRepository, request.app.state.records)
+
+
+def get_templates(request: Request) -> Jinja2Templates:
+    """Return the template environment stored on the application state."""
+    return cast(Jinja2Templates, request.app.state.templates)
+
+
+def get_settings(request: Request) -> Settings:
+    """Return the settings stored on the application state."""
+    return cast(Settings, request.app.state.settings)

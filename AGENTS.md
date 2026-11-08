@@ -128,6 +128,13 @@ ersatzlos gelöscht; die Git-Historie ist das Archiv.
   Upgrade-Pfad (`pyinit doctor`/`diff`) gibt es noch nicht – nicht ungefragt
   nachbauen, sondern als Aufgabe anlegen.
 
+### Web-Templates bleiben statisch
+
+- **Situation**: Die HTML-Templates des `web`-Artefakts enthalten
+  Laufzeit-Jinja2-Platzhalter, die pyinit nicht rendern darf.
+- **Handhabung**: `web/files/*.html` in `artifact.toml` bleiben bei
+  `render = false`; nur die Python-Templates nutzen pyinit-Platzhalter.
+
 ## Herkunft
 
 - lupysta_version: `0.15.0`

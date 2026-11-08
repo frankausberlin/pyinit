@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.5rem 2rem;
+}
+
+header {
+  border-bottom: 1px solid currentColor;
+  padding: 1rem 0;
+}
+
+header a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 48rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid currentColor;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+button {
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}

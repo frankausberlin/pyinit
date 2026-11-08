@@ -1,0 +1,35 @@
+id = "web"
+description = "FastAPI + Jinja2 web application with server-rendered pages, actions, and a WebSocket example"
+modes = ["app"]
+provides = ["entrypoint.web"]
+runtime_dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "jinja2>=3.1",
+]
+dev_dependencies = ["httpx>=0.27"]
+files = [
+  { source = "templates/main.py.j2", target = "src/{{ package_name }}/main.py" },
+  { source = "templates/app.py.j2", target = "src/{{ package_name }}/app.py" },
+  { source = "templates/config.py.j2", target = "src/{{ package_name }}/config.py" },
+  { source = "templates/domain_init.py.j2", target = "src/{{ package_name }}/domain/__init__.py" },
+  { source = "templates/models.py.j2", target = "src/{{ package_name }}/domain/models.py" },
+  { source = "templates/ports.py.j2", target = "src/{{ package_name }}/domain/ports.py" },
+  { source = "templates/adapters_init.py.j2", target = "src/{{ package_name }}/adapters/__init__.py" },
+  { source = "templates/memory.py.j2", target = "src/{{ package_name }}/adapters/memory.py" },
+  { source = "templates/web_init.py.j2", target = "src/{{ package_name }}/web/__init__.py" },
+  { source = "templates/routes_init.py.j2", target = "src/{{ package_name }}/web/routes/__init__.py" },
+  { source = "templates/dependencies.py.j2", target = "src/{{ package_name }}/web/dependencies.py" },
+  { source = "templates/pages.py.j2", target = "src/{{ package_name }}/web/routes/pages.py" },
+  { source = "templates/actions.py.j2", target = "src/{{ package_name }}/web/routes/actions.py" },
+  { source = "templates/live.py.j2", target = "src/{{ package_name }}/web/routes/live.py" },
+  { source = "files/base.html", target = "src/{{ package_name }}/web/templates/base.html", render = false },
+  { source = "files/index.html", target = "src/{{ package_name }}/web/templates/index.html", render = false },
+  { source = "files/records_list.html", target = "src/{{ package_name }}/web/templates/records/list.html", render = false },
+  { source = "files/records_detail.html", target = "src/{{ package_name }}/web/templates/records/detail.html", render = false },
+  { source = "files/style.css", target = "src/{{ package_name }}/web/static/style.css", render = false },
+  { source = "templates/test_smoke.py.j2", target = "tests/test_smoke.py" },
+  { source = "templates/test_actions.py.j2", target = "tests/test_web_actions.py" },
+  { source = "templates/test_live.py.j2", target = "tests/test_web_live.py" },
+]
+just_fragments = ["templates/justfile.j2"]

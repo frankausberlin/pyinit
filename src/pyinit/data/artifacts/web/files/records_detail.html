@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ record.title }} - {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ record.title }}</h1>
+<p>{{ record.body }}</p>
+<p>Status: <strong>{{ record.status }}</strong></p>
+<form method="post" action="/records/{{ record.id }}/touch">
+  <button type="submit">Touch</button>
+</form>
+<p><a href="/records">Back to records</a></p>
+{% endblock %}

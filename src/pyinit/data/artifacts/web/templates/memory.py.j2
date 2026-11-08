@@ -1,0 +1,40 @@
+"""In-memory adapter for the example record repository."""
+
+from __future__ import annotations
+
+from dataclasses import replace
+
+from {{ package_name }}.domain.models import Record
+
+
+class InMemoryRecordRepository:
+    """Keep records in memory; replace this adapter for real data."""
+
+    def __init__(self, records: list[Record] | None = None) -> None:
+        """Seed the repository with records."""
+        self._records = {item.id: item for item in (records or _seed_records())}
+
+    def list(self) -> list[Record]:
+        """Return all records in stable id order."""
+        return [self._records[key] for key in sorted(self._records)]
+
+    def get(self, record_id: str) -> Record | None:
+        """Return one record or ``None``."""
+        return self._records.get(record_id)
+
+    def touch(self, record_id: str) -> Record | None:
+        """Mark a record as touched and return it, or ``None``."""
+        record = self._records.get(record_id)
+        if record is None:
+            return None
+        updated = replace(record, status="touched")
+        self._records[record_id] = updated
+        return updated
+
+
+def _seed_records() -> list[Record]:
+    return [
+        Record(id="alpha", title="Alpha", body="First example record."),
+        Record(id="beta", title="Beta", body="Second example record."),
+        Record(id="gamma", title="Gamma", body="Third example record.", status="archived"),
+    ]

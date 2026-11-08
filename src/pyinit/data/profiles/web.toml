@@ -1,0 +1,4 @@
+id = "web"
+description = "Web application with server-rendered pages, form actions, and live updates"
+mode = "app"
+artifacts = ["agent-docs", "adr", "ap", "web", "e2e", "agent", "refactor"]

@@ -28,7 +28,21 @@ just test-agent  # provider suite manually (hint + exit 0 until tests exist)
 gate: run it locally with `just test-e2e`; CI runs it automatically once test
 files exist. Agent tests are manual-only and never run in CI.
 
-{% if "mcp.server" in capabilities %}## MCP Server
+{% if "entrypoint.web" in capabilities %}## Web Application
+
+```bash
+just dev         # uvicorn with auto-reload
+just serve       # uvicorn without auto-reload
+```
+
+`just run` starts the same app through the installed entry point. The example
+ships a record list, a detail page, a POST action, and a WebSocket echo. Replace
+`domain/` and `adapters/` for real data.
+
+The example has no authentication or CSRF protection. Add `web-auth` before
+exposing state-changing actions outside a trusted local environment.
+
+{% endif %}{% if "mcp.server" in capabilities %}## MCP Server
 
 {% if "entrypoint.cli" in capabilities %}```bash
 just run         # run the hello command

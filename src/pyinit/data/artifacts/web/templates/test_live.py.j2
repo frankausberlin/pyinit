@@ -1,0 +1,14 @@
+"""Tests for the WebSocket example endpoint."""
+
+from __future__ import annotations
+
+from fastapi.testclient import TestClient
+
+from {{ package_name }}.app import app
+
+
+def test_websocket_echo_sends_messages_back() -> None:
+    """The echo endpoint sends every message back."""
+    with TestClient(app).websocket_connect("/ws/echo") as websocket:
+        websocket.send_text("hello")
+        assert websocket.receive_text() == "hello"

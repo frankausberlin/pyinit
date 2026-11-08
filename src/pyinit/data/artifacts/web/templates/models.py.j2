@@ -1,0 +1,15 @@
+"""Neutral example model; replace it with your own domain."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Record:
+    """One example record rendered by the web application."""
+
+    id: str
+    title: str
+    body: str
+    status: str = "new"

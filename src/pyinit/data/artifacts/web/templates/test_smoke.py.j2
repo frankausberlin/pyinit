@@ -1,0 +1,64 @@
+"""Smoke tests for the server-rendered pages."""
+
+from __future__ import annotations
+
+import pytest
+import uvicorn
+from fastapi.testclient import TestClient
+
+from {{ package_name }} import main as main_module
+from {{ package_name }}.app import app
+from {{ package_name }}.config import Settings
+
+
+def test_index_shows_the_app_name() -> None:
+    """The landing page renders the configured app name."""
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert "{{ project_name }}" in response.text
+
+
+def test_records_list_shows_seed_records() -> None:
+    """The list page renders the seed records."""
+    response = TestClient(app).get("/records")
+    assert response.status_code == 200
+    assert "Alpha" in response.text
+    assert "Beta" in response.text
+
+
+def test_record_detail_shows_one_record() -> None:
+    """The detail page renders one record."""
+    response = TestClient(app).get("/records/alpha")
+    assert response.status_code == 200
+    assert "First example record." in response.text
+
+
+def test_unknown_record_returns_404() -> None:
+    """An unknown record id returns 404."""
+    response = TestClient(app).get("/records/unknown")
+    assert response.status_code == 404
+
+
+def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Settings are read from ``WEB_*`` environment variables."""
+    monkeypatch.setenv("WEB_APP_NAME", "Test App")
+    monkeypatch.setenv("WEB_HOST", "0.0.0.0")
+    monkeypatch.setenv("WEB_PORT", "9000")
+    settings = Settings.from_env()
+    assert settings.app_name == "Test App"
+    assert settings.host == "0.0.0.0"
+    assert settings.port == 9000
+
+
+def test_main_starts_uvicorn_with_the_configured_address(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The entry point starts the app with the configured host and port."""
+    monkeypatch.delenv("WEB_HOST", raising=False)
+    monkeypatch.delenv("WEB_PORT", raising=False)
+    calls: list[tuple[str, str, int]] = []
+
+    def fake_run(application: str, *, host: str, port: int) -> None:
+        calls.append((application, host, port))
+
+    monkeypatch.setattr(uvicorn, "run", fake_run)
+    main_module.main()
+    assert calls == [("{{ package_name }}.app:app", "127.0.0.1", 8000)]

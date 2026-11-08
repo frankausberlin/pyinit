@@ -220,6 +220,31 @@ def test_cli_mcp_profile_combines_cli_and_server_capabilities() -> None:
     assert resolution.runtime_dependencies == ("typer>=0.27.3", "mcp>=2.3.0,<3")
 
 
+def test_web_profile_resolves_web_entrypoint_and_dependencies() -> None:
+    """The web profile provides exactly one web entry point."""
+    data = load_catalog()
+    resolution = resolve(data.profile("web"), data)
+    assert [item.id for item in resolution.artifacts] == [
+        "base-app",
+        "agent-docs",
+        "adr",
+        "ap",
+        "web",
+        "e2e",
+        "agent",
+        "refactor",
+    ]
+    assert {capability for capability in resolution.capabilities if capability.startswith("entrypoint.")} == {
+        "entrypoint.web"
+    }
+    assert resolution.runtime_dependencies == (
+        "fastapi>=0.115",
+        "uvicorn[standard]>=0.30",
+        "jinja2>=3.1",
+    )
+    assert "httpx>=0.27" in resolution.dev_dependencies
+
+
 @pytest.mark.parametrize("profile_id", ["mcp", "cli-mcp"])
 @pytest.mark.parametrize("name", ["mcp", "MCP", "Mcp"])
 def test_mcp_project_name_collides_with_sdk_dependency(profile_id: str, name: str) -> None:

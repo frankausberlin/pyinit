@@ -1,0 +1,19 @@
+"""WebSocket endpoint used as the live-update docking point."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+router = APIRouter()
+
+
+@router.websocket("/ws/echo")
+async def echo(websocket: WebSocket) -> None:
+    """Echo every text message back to the client."""
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await websocket.send_text(message)
+    except WebSocketDisconnect:
+        return

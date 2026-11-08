@@ -39,7 +39,7 @@ def context_for(profile: Profile, target: Path) -> Context:
     )
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp", "web"])
 def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
     """Test."""
     catalog = load_catalog()
@@ -73,7 +73,7 @@ def test_render_all_profiles(profile_id: str, tmp_path: Path) -> None:
         assert "run" in recipe_names(justfile.content)
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp", "web"])
 def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Path) -> None:
     """A dotted project name stays a single command key in TOML."""
     catalog = load_catalog()
@@ -85,7 +85,7 @@ def test_entrypoint_key_is_quoted_for_dotted_names(profile_id: str, tmp_path: Pa
     assert scripts == {"my.project": "my_project.main:main"}
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "mcp", "web"])
 def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: Path) -> None:
     """Names without a dot produce the same command key as before."""
     catalog = load_catalog()
@@ -97,7 +97,7 @@ def test_entrypoint_key_is_unchanged_for_plain_names(profile_id: str, tmp_path: 
     assert scripts == {"demo": "demo.main:main"}
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp", "web"])
 def test_agents_adr_and_ap_sections_use_current_conventions(profile_id: str, tmp_path: Path) -> None:
     """AGENTS.md delegates ADR conventions and uses title-based Attention Points."""
     catalog = load_catalog()
@@ -153,6 +153,33 @@ def test_mcp_profile_renders_server_entrypoint_and_recipe(tmp_path: Path) -> Non
         "vulture>=2.16",
     ]
     assert data["project"]["scripts"] == {"demo": "demo.main:main"}
+
+
+def test_web_profile_renders_pages_actions_and_live_example(tmp_path: Path) -> None:
+    """The web profile ships routes, templates, static files, and recipes."""
+    catalog = load_catalog()
+    profile = catalog.profile("web")
+    files = render_files(resolve(profile, catalog), context_for(profile, tmp_path / "demo"))
+    by_target = {item.target: item.content for item in files}
+    assert "def create_app(settings: Settings | None = None) -> FastAPI:" in by_target["src/demo/app.py"]
+    assert "app.state.records = InMemoryRecordRepository()" in by_target["src/demo/app.py"]
+    assert "async def echo(websocket: WebSocket) -> None:" in by_target["src/demo/web/routes/live.py"]
+    assert "def touch_record(" in by_target["src/demo/web/routes/actions.py"]
+    assert "status_code=303" in by_target["src/demo/web/routes/actions.py"]
+    assert "{{ settings.app_name }}" in by_target["src/demo/web/templates/base.html"]
+    assert "{{ record.id }}" in by_target["src/demo/web/templates/records/detail.html"]
+    assert "table {" in by_target["src/demo/web/static/style.css"]
+    assert "def test_websocket_echo_sends_messages_back" in by_target["tests/test_web_live.py"]
+    assert "def test_touch_redirects_to_the_detail_page" in by_target["tests/test_web_actions.py"]
+    assert 'monkeypatch.setattr(uvicorn, "run", fake_run)' in by_target["tests/test_smoke.py"]
+    data = tomllib.loads(by_target["pyproject.toml"])
+    assert data["project"]["dependencies"] == ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1"]
+    assert "httpx>=0.27" in data["dependency-groups"]["dev"]
+    recipes = recipe_names(by_target["Justfile"])
+    assert {"dev", "serve"} <= recipes
+    assert "uv run uvicorn demo.app:app --reload" in by_target["Justfile"]
+    assert "App (Web mit FastAPI)" in by_target["AGENTS.md"]
+    assert "## Web Application" in by_target["README.md"]
 
 
 def test_app_cli_smoke_keeps_typer_single_command_form(tmp_path: Path) -> None:
@@ -225,7 +252,7 @@ def test_external_mcp_server_without_entrypoint_has_no_mcp_start_path(
     assert "MCP-Entrypoint" in by_target["AGENTS.md"]
 
 
-@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
+@pytest.mark.parametrize("profile_id", ["app", "app-cli", "cli-mcp", "lib", "mcp", "web"])
 def test_provenance_records_the_bundled_skill_version(profile_id: str, tmp_path: Path) -> None:
     """The herkunft section renders the single-source version, not a literal."""
     catalog = load_catalog()

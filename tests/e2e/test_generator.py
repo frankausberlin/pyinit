@@ -13,7 +13,7 @@ from pyinit.errors import TargetError
 FAKEBIN = Path(__file__).resolve().parent / "fakebin"
 
 
-@pytest.mark.parametrize("profile", ["app", "app-cli", "cli-mcp", "lib", "mcp"])
+@pytest.mark.parametrize("profile", ["app", "app-cli", "cli-mcp", "lib", "mcp", "web"])
 def test_dry_run_writes_nothing(profile: str, tmp_path: Path) -> None:
     """Every bundled profile produces a plan without touching the filesystem."""
     target = tmp_path / ("mcp-project" if profile == "mcp" else profile)
@@ -76,6 +76,24 @@ def test_apply_cli_mcp_with_fake_toolchain(monkeypatch: pytest.MonkeyPatch, tmp_
     assert '"demo" = "demo.main:main"' in pyproject
     justfile = (target / "Justfile").read_text(encoding="utf-8")
     assert "uv run demo mcp" in justfile
+    assert not list(tmp_path.glob(".demo.pyinit-*"))
+
+
+def test_apply_web_with_fake_toolchain(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Apply the web profile and verify its templates, static files, and tests."""
+    monkeypatch.setenv("PATH", f"{FAKEBIN}{os.pathsep}{os.environ.get('PATH', '')}")
+    target = tmp_path / "demo"
+    plan = generate("web", target, no_check=True, author_name="E2E Author")
+    assert plan.target == target
+    assert (target / "src" / "demo" / "app.py").is_file()
+    assert (target / "src" / "demo" / "web" / "templates" / "base.html").is_file()
+    assert (target / "src" / "demo" / "web" / "templates" / "records" / "detail.html").is_file()
+    assert (target / "src" / "demo" / "web" / "static" / "style.css").is_file()
+    assert (target / "tests" / "test_smoke.py").is_file()
+    assert (target / "tests" / "test_web_actions.py").is_file()
+    assert (target / "tests" / "test_web_live.py").is_file()
+    justfile = (target / "Justfile").read_text(encoding="utf-8")
+    assert "uv run uvicorn demo.app:app --reload" in justfile
     assert not list(tmp_path.glob(".demo.pyinit-*"))
 
 

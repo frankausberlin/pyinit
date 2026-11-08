@@ -464,6 +464,72 @@ Eigenständiger MCP-Einstieg; Modus `app`, verlangt `mcp-server`, Konflikte mit
   `arithmetic-mcp` ist nötig; der Profilname bleibt `mcp` (Attention Point
   „MCP-Projekt nicht `mcp` nennen“).
 
+### `web`
+
+FastAPI-Webanwendung mit SSR, Form-Action und WebSocket-Beispiel; Modus `app`,
+bietet `entrypoint.web`.
+
+**Dateien**
+
+| Quelle | Ziel |
+| --- | --- |
+| `templates/main.py.j2` | `src/<paket>/main.py` |
+| `templates/app.py.j2` | `src/<paket>/app.py` |
+| `templates/config.py.j2` | `src/<paket>/config.py` |
+| `templates/domain_init.py.j2` | `src/<paket>/domain/__init__.py` |
+| `templates/models.py.j2` | `src/<paket>/domain/models.py` |
+| `templates/ports.py.j2` | `src/<paket>/domain/ports.py` |
+| `templates/adapters_init.py.j2` | `src/<paket>/adapters/__init__.py` |
+| `templates/memory.py.j2` | `src/<paket>/adapters/memory.py` |
+| `templates/web_init.py.j2` | `src/<paket>/web/__init__.py` |
+| `templates/routes_init.py.j2` | `src/<paket>/web/routes/__init__.py` |
+| `templates/dependencies.py.j2` | `src/<paket>/web/dependencies.py` |
+| `templates/pages.py.j2` | `src/<paket>/web/routes/pages.py` |
+| `templates/actions.py.j2` | `src/<paket>/web/routes/actions.py` |
+| `templates/live.py.j2` | `src/<paket>/web/routes/live.py` |
+| `files/base.html` | `src/<paket>/web/templates/base.html` |
+| `files/index.html` | `src/<paket>/web/templates/index.html` |
+| `files/records_list.html` | `src/<paket>/web/templates/records/list.html` |
+| `files/records_detail.html` | `src/<paket>/web/templates/records/detail.html` |
+| `files/style.css` | `src/<paket>/web/static/style.css` |
+| `templates/test_smoke.py.j2` | `tests/test_smoke.py` |
+| `templates/test_actions.py.j2` | `tests/test_web_actions.py` |
+| `templates/test_live.py.j2` | `tests/test_web_live.py` |
+
+**Rezepte:** `dev`, `serve`.
+
+**Laufzeitabhängigkeiten:** `fastapi>=0.115`, `uvicorn[standard]>=0.30`,
+`jinja2>=3.1`.
+
+**Entwicklungsabhängigkeit:** `httpx>=0.27` (FastAPI-`TestClient`).
+
+**Besonderheiten**
+
+- Das neutrale Beispiel ist ein Record-Modell mit `list`, `get` und `touch`.
+  `domain/` und `adapters/` sind die Andockpunkte für echte Domänen; das
+  In-Memory-Adapter liefert drei Seed-Records.
+- `app.py` erzeugt die App über `create_app(settings)` und legt Repository,
+  Templates und Settings unter `app.state` ab. `dependencies.py` liest sie dort,
+  damit Router und App-Fabrik nicht zirkulär importieren. Templates und Static
+  liegen im Paket und werden von uv_build mit dem Modulverzeichnis ausgeliefert.
+- `GET /`, `GET /records` und `GET /records/<id>` rendern SSR-Seiten;
+  unbekannte IDs antworten mit 404. `POST /records/<id>/touch` setzt
+  `status = "touched"` und antwortet mit `303` auf die Detailseite – der
+  Andockpunkt für LAN-Aktionen wie Wake-on-LAN.
+- `GET /ws/echo` ist ein WebSocket, der Text zurückschickt – der Andockpunkt für
+  ein Browser-Terminal. Es gibt weder Authentifizierung noch CSRF-Schutz; vor
+  einem Einsatz außerhalb einer vertrauenswürdigen lokalen Umgebung ist
+  `web-auth` nötig.
+- HTML-Templates sind `render = false`, damit ihre Laufzeit-Jinja2-Platzhalter
+  erhalten bleiben; nur die Python-Templates werden von pyinit gerendert.
+- `config.py` liest `WEB_APP_NAME`, `WEB_HOST` und `WEB_PORT` (Defaults:
+  Projektname, `127.0.0.1`, `8000`). `main()` startet uvicorn über den
+  installierten Entrypoint; `just dev` und `just serve` starten uvicorn direkt.
+  `just run` bleibt aus `base-app`.
+- Die Tests decken Seiten inklusive 404, die POST-Action mit Redirect,
+  WebSocket-Echo, `Settings.from_env()` und `main()` mit gepatchtem
+  `uvicorn.run` ab. Alle Tests laufen ohne Netz und ohne echte Geräte.
+
 ## Profile
 
 | Profil | Modus | Injizierte Basis | Artefakte | Ergebnis |
@@ -473,10 +539,12 @@ Eigenständiger MCP-Einstieg; Modus `app`, verlangt `mcp-server`, Konflikte mit
 | `cli-mcp` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `cli`, `mcp-server`, `e2e`, `agent`, `refactor` | Typer-CLI mit `mcp`-Subkommando, MCP-Servermodul, Inspector-Rezept und einem Entrypoint |
 | `lib` | `lib` | `base-lib` → `base-app` | `agent-docs`, `adr`, `ap`, `e2e`, `agent`, `refactor`, `diataxis` | Bibliothek mit MkDocs-/Diátaxis-Gerüst, Release-Workflow und Versions-Smoke-Test |
 | `mcp` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `mcp`, `e2e`, `agent`, `refactor` | Anwendung mit MCP-Server, Inspector-Rezept und SDK-Smoke-Tests |
+| `web` | `app` | `base-app` | `agent-docs`, `adr`, `ap`, `web`, `e2e`, `agent`, `refactor` | FastAPI-Webanwendung mit SSR-Seiten, POST-Action, WebSocket-Beispiel und uvicorn-Rezepten |
 
 Alle Profile bringen `agent-docs`, `adr`, `ap`, `e2e`, `agent` und `refactor`
 mit; sie unterscheiden sich im Einstieg (`app-main`, `cli`, `mcp`, `cli` +
-`mcp-server`) und bei `lib` zusätzlich durch die Dokumentationsartefakte.
+`mcp-server`, `web`) und bei `lib` zusätzlich durch die
+Dokumentationsartefakte.
 Externe Profile
 (`--profile-file`) dürfen nur gebündelte Artefakt-IDs referenzieren.
 

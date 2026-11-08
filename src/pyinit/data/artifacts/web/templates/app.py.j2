@@ -1,0 +1,32 @@
+"""FastAPI application factory for {{ project_name }}."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from {{ package_name }}.adapters.memory import InMemoryRecordRepository
+from {{ package_name }}.config import Settings
+from {{ package_name }}.web.routes import actions, live, pages
+
+_WEB_DIRECTORY = Path(__file__).parent / "web"
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    """Create the application with routers, templates, and static files."""
+    resolved = settings or Settings()
+    app = FastAPI(title=resolved.app_name)
+    app.state.settings = resolved
+    app.state.records = InMemoryRecordRepository()
+    app.state.templates = Jinja2Templates(directory=_WEB_DIRECTORY / "templates")
+    app.mount("/static", StaticFiles(directory=_WEB_DIRECTORY / "static"), name="static")
+    app.include_router(pages.router)
+    app.include_router(actions.router)
+    app.include_router(live.router)
+    return app
+
+
+app = create_app()

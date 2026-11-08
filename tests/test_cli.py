@@ -29,6 +29,7 @@ def test_list_profiles() -> None:
     assert "app-cli" in result.output
     assert "cli-mcp" in result.output
     assert "mcp" in result.output
+    assert "web" in result.output
     assert "[lib]" in result.output
 
 
