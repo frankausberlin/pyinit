@@ -17,7 +17,7 @@ _WEB_DIRECTORY = Path(__file__).parent / "web"
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Create the application with routers, templates, and static files."""
-    resolved = settings or Settings()
+    resolved = settings or Settings.from_env()
     app = FastAPI(title=resolved.app_name)
     app.state.settings = resolved
     app.state.records = InMemoryRecordRepository()

@@ -9,9 +9,13 @@ from {{ package_name }}.app import app
 
 def test_touch_redirects_to_the_detail_page() -> None:
     """Touching a record redirects and shows the new status."""
-    response = TestClient(app).post("/records/beta/touch", follow_redirects=True)
-    assert response.status_code == 200
-    assert "touched" in response.text
+    response = TestClient(app).post("/records/beta/touch", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/records/beta"
+
+    detail = TestClient(app).get("/records/beta")
+    assert detail.status_code == 200
+    assert "touched" in detail.text
 
 
 def test_touch_unknown_record_returns_404() -> None:
